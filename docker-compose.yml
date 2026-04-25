@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   dashboard:
     build: .
@@ -5,5 +6,7 @@ services:
       - "8085:5000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    # No hardcoded IPs here!
+    environment:
+      - TRUENAS_IP=${TRUENAS_IP}
+      - TRUENAS_API_KEY=${TRUENAS_API_KEY}
     restart: always
