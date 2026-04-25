@@ -22,11 +22,12 @@ PROXMOX_NODE = os.getenv("PROXMOX_NODE")
 PROXMOX_TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
 PROXMOX_TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 
+PORTAINER_IP = os.getenv("PORTAINER_IP")
 PORT_MAP = {
     "immich_server": "2283",
     "plex": "32400",
     "pihole": "80",
-    "portainer": "9000",
+    "portainer": "9443",
     "vaultstream": "5005"
 }
 
@@ -120,7 +121,7 @@ def index():
     for c in all_containers:
         name = c.name.lstrip('/')
         port = PORT_MAP.get(name, "")
-        url = f"http://{TRUENAS_IP}:{port}" if port else "#"
+        url = f"http://{PORTAINER_IP}:{port}" if port else "#"
         if "immich" in name.lower():
             groups["Immich"]["services"].append({"name": name, "status": c.status})
             if c.status == "running": groups["Immich"]["status"] = "running"
