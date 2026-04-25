@@ -104,28 +104,33 @@
                 <h2>Host System Status</h2>
             </div>
             
-            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                <div style="flex: 1; min-width: 250px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <strong>CPU Usage ({{ system.cpu_count }} Cores)</strong>
-                        <span>{{ system.cpu_usage }}% @ {{ system.cpu_mhz }}MHz</span>
-                    </div>
-                    <div class="progress-bg">
-                        <div style="width: {{ system.cpu_usage }}%; background: #4ade80; height: 100%;"></div>
-                    </div>
+           <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
+                <div class="title-area">
+                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
+                    <h2>Virtual Machines (Proxmox)</h2>
                 </div>
-
-                <div style="flex: 1; min-width: 250px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <strong>RAM: {{ system.ram_used }} / {{ system.ram_total }}</strong>
-                        <span>{{ system.ram_percent }}%</span>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                    {% for vm in vms %}
+                    <div class="sub-service" style="flex-direction: column; align-items: stretch; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
+                            <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}">● {{ vm.status.upper() }}</span>
+                        </div>
+                        
+                        {% if vm.status == 'running' %}
+                        <div style="font-size: 0.75rem; margin-bottom: 4px;">CPU: {{ vm.cpu }}% | RAM: {{ vm.mem_pct }}% ({{ vm.mem_used }})</div>
+                        <div class="progress-bg" style="height: 4px; margin-bottom: 4px;">
+                            <div style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
+                        </div>
+                        <div class="progress-bg" style="height: 4px;">
+                            <div style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
+                        </div>
+                        {% endif %}
                     </div>
-                    <div class="progress-bg">
-                        <div style="width: {{ system.ram_percent }}%; background: #a855f7; height: 100%;"></div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
 
         <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
             <div class="title-area">
