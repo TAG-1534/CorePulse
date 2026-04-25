@@ -114,31 +114,31 @@ def index():
     # --- Proxmox Logic ---
     vm_list = get_proxmox_stats()
 
-    # --- Docker Logic ---
+  # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
-    groups["Immich"]["url"] = f"http://{TRUENAS_IP}:{PORT_MAP.get('immich_server', '2283')}"
-
+    
     for c in all_containers:
         name = c.name.lstrip('/')
         
-        # Get config from map, or use default fallback
-        config = PORT_MAP.get(name)
+        # Get config from map using lowercase to avoid naming mismatches
+        config = PORT_MAP.get(name) or PORT_MAP.get(name.lower())
         
         if config:
             proto = config.get("proto", "http")
             port = config.get("port", "")
-            # Use PORTAINER_IP for containers, or fall back to TRUENAS_IP
             host = PORTAINER_IP or TRUENAS_IP
             url = f"{proto}://{host}:{port}"
         else:
-            url = "#" # No config found, button won't do anything
+            url = "#"
+
+        # Get image tag for the modal
+        image_name = c.image.tags[0] if c.image.tags else "Unknown Image"
 
         if "immich" in name.lower():
             groups["Immich"]["services"].append({"name": name, "status": c.status})
             if c.status == "running":
                 groups["Immich"]["status"] = "running"
-                # Update Immich main URL from the map specifically
                 immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
                 groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
         else:
@@ -146,7 +146,9 @@ def index():
                 "name": name, 
                 "status": c.status, 
                 "icon_url": get_icon_url(name), 
-                "url": url
+                "url": url,
+                "image": image_name, # Critical for the modal!
+                "address": url       # Critical for the modal!
             })
 
    # --- TrueNAS Storage Logic ---
