@@ -16,6 +16,12 @@ client = docker.from_env()
 TRUENAS_IP = os.getenv("TRUENAS_IP")
 TRUENAS_API_KEY = os.getenv("TRUENAS_API_KEY")
 
+# Proxmox Config
+PROXMOX_URL = os.getenv("PROXMOX_URL") # e.g., https://192.168.1.50:8006/api2/json
+PROXMOX_NODE = os.getenv("PROXMOX_NODE") # e.g., pve
+PROXMOX_TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID") # e.g., root@pam!dashboard
+PROXMOX_TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
+
 PORT_MAP = {
     "immich_server": "2283",
     "plex": "32400",
@@ -55,6 +61,54 @@ def api_stats():
         "ram_used": format_bytes(vm.used),
         "ram_total": format_bytes(vm.total)
     })
+
+def get_proxmox_stats():
+    url = os.getenv("PROXMOX_URL")
+    node = os.getenv("PROXMOX_NODE")
+    token_id = os.getenv("PROXMOX_TOKEN_ID")
+    token_secret = os.getenv("PROXMOX_TOKEN_SECRET")
+    
+    if not all([url, node, token_id, token_secret]):
+        return []
+
+    headers = {"Authorization": f"PVEAPIToken={token_id}={token_secret}"}
+    try:
+        # Get all QEMU (VM) instances on the node
+        r = requests.get(f"{url}/nodes/{node}/qemu", headers=headers, verify=False, timeout=2)
+        if r.status_code == 200:
+            vms = []
+            for vm in r.json()['data']:
+                # Calculate percentages
+                cpu = round(vm.get('cpu', 0) * 100, 1)
+                max_mem = vm.get('maxmem', 1)
+                curr_mem = vm.get('mem', 0)
+                mem_pct = round((curr_mem / max_mem) * 100, 1) if max_mem > 0 else 0
+                
+                vms.append({
+                    "name": vm['name'],
+                    "status": vm['status'],
+                    "vmid": vm['vmid'],
+                    "cpu": cpu,
+                    "mem_pct": mem_pct,
+                    "mem_used": format_bytes(curr_mem)
+                })
+            return sorted(vms, key=lambda x: x['vmid'])
+    except Exception as e:
+        print(f"Proxmox Error: {e}")
+    return []
+
+# Then in your index() route:
+@app.route('/')
+def index():
+    # ... your existing system_stats and nas_stats ...
+    vm_list = get_proxmox_stats()
+    
+    return render_template('index.html', 
+                           groups=groups, 
+                           nas=nas_stats, 
+                           system=system_stats, 
+                           vms=vm_list, # Add this
+                           nas_ip=TRUENAS_IP)
 
 @app.route('/')
 def index():
