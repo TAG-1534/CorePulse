@@ -183,6 +183,31 @@
         </div>
 
         {% for app in groups['Apps'] %}
+        <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
+            </div>
+
+        {% if groups['Immich']['services'] %}
+        <div class="card" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
+            <div class="title-area">
+                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
+                <h2>Immich Photos</h2>
+            </div>
+            <p>Overall: <span class="status-{{ groups['Immich']['status'] }}">● {{ groups['Immich']['status'].upper() }}</span></p>
+            
+            <div style="margin: 10px 0;">
+                {% for s in groups['Immich']['services'] %}
+                <div class="sub-service">
+                    <span>{{ s.name }}</span>
+                    <span class="status-{{ s.status }}">●</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn">Open Immich</a>
+        </div>
+        {% endif %}
+
+        {% for app in groups['Apps'] %}
         <div class="card">
             <div class="title-area">
                 <img src="{{ app.icon_url }}" alt="icon" onerror="this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
@@ -192,7 +217,39 @@
             <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
         </div>
         {% endfor %}
+        
     </div> <script>
+        function updateStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update Host
+                    document.getElementById('host-cpu-bar').style.width = data.system.cpu_usage + '%';
+                    document.getElementById('host-cpu-text').innerText = data.system.cpu_usage + '%';
+                    document.getElementById('host-ram-bar').style.width = data.system.ram_percent + '%';
+                    document.getElementById('host-ram-pct').innerText = data.system.ram_percent + '%';
+                    document.getElementById('host-ram-text').innerText = data.system.ram_used + ' / ' + data.system.ram_total;
+                    
+                    // Update VMs
+                    data.vms.forEach(vm => {
+                        const cpuBar = document.getElementById(`vm-cpu-${vm.vmid}`);
+                        const memBar = document.getElementById(`vm-mem-${vm.vmid}`);
+                        const cpuText = document.getElementById(`text-cpu-${vm.vmid}`);
+                        const memText = document.getElementById(`text-mem-${vm.vmid}`);
+                        
+                        if(cpuBar) cpuBar.style.width = vm.cpu + '%';
+                        if(memBar) memBar.style.width = vm.mem_pct + '%';
+                        if(cpuText) cpuText.innerText = vm.cpu;
+                        if(memText) memText.innerText = vm.mem_pct;
+                    });
+                })
+                .catch(err => console.error("Update failed:", err));
+        }
+
+        setInterval(updateStats, 3000);
+    </script>
+</body>
+</html> <script>
         function updateStats() {
             fetch('/api/stats')
                 .then(response => response.json())
