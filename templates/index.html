@@ -11,6 +11,13 @@
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             background-attachment: fixed;
             color: white;
+            transition: filter 0.3s ease;
+        }
+
+        /* When modal is open, blur the main content */
+        body.modal-open .grid, body.modal-open h1 {
+            filter: blur(8px);
+            pointer-events: none;
         }
 
         .grid {
@@ -28,12 +35,32 @@
             padding: 24px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             transition: transform 0.2s ease;
+            position: relative; /* Needed for absolute menu button */
         }
 
         .card:hover {
             transform: scale(1.01);
             background: rgba(255, 255, 255, 0.08);
         }
+
+        /* Hamburger Menu Button */
+        .menu-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: 0.3s;
+            z-index: 5;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        .menu-btn:hover { opacity: 1; transform: scale(1.2); }
 
         .title-area {
             display: flex;
@@ -92,6 +119,34 @@
         }
 
         .btn:hover { background: #38bdf8; color: #0f172a; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; margin: 15px 0; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        .info-row strong { color: #94a3b8; }
+        .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.5; }
+        .close-modal:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -106,7 +161,8 @@
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                 {% for vm in vms %}
-                <div class="sub-service" style="flex-direction: column; align-items: stretch; padding: 16px; background: rgba(255,255,255,0.05);">
+                <div class="sub-service" style="flex-direction: column; align-items: stretch; padding: 16px; background: rgba(255,255,255,0.05); position: relative;">
+                    <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A')">⋮</button>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
                         <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">
@@ -172,6 +228,7 @@
         
         {% if groups['Immich']['services'] %}
         <div class="card" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
+            <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', 'N/A')">⋮</button>
             <div class="title-area">
                 <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
                 <h2>Immich Photos</h2>
@@ -191,23 +248,75 @@
 
         {% for app in groups['Apps'] %}
         <div class="card">
+            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.url }}')">
+                ⋮
+            </button>
             <div class="title-area">
                 <img src="{{ app.icon_url }}" alt="icon" onerror="this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
                 <h2>{{ app.name }}</h2>
             </div>
             <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
             <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
-            <p>IP Address: <span>{{ app.url}}</span></p>
         </div>
         {% endfor %}
     </div>
 
+    <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="margin:0;">Service Info</h2>
+                <button class="close-modal" onclick="closeInfoMenu()">&times;</button>
+            </div>
+            <div class="info-row">
+                <strong>Status</strong>
+                <span id="modalStatus">Running</span>
+            </div>
+            <div class="info-row">
+                <strong>Address</strong>
+                <span id="modalAddress" style="font-size: 0.8rem; color: #38bdf8;"></span>
+            </div>
+            <div class="info-row">
+                <strong>Stack / Image</strong>
+                <span id="modalImage" style="font-size: 0.8rem; max-width: 200px; text-align: right; word-break: break-all;"></span>
+            </div>
+            <div class="info-row" style="border:none;">
+                <strong>Region</strong>
+                <span>New Zealand</span>
+            </div>
+            <a id="modalLink" href="#" target="_blank" class="btn">Access Service</a>
+        </div>
+    </div>
+
     <script>
+        // Modal Logic
+        function openInfoMenu(name, status, url, image, address) {
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalStatus').innerText = status.toUpperCase();
+            document.getElementById('modalStatus').className = 'status-' + status;
+            document.getElementById('modalAddress').innerText = address || url;
+            document.getElementById('modalImage').innerText = image || 'N/A';
+            document.getElementById('modalLink').href = url;
+            
+            if (url === "#") {
+                document.getElementById('modalLink').style.display = 'none';
+            } else {
+                document.getElementById('modalLink').style.display = 'block';
+            }
+
+            document.getElementById('infoModal').style.display = 'flex';
+            document.body.classList.add('modal-open');
+        }
+
+        function closeInfoMenu() {
+            document.getElementById('infoModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+
+        // Live Stats Update
         function updateStats() {
             fetch('/api/stats')
                 .then(response => response.json())
                 .then(data => {
-                    // Update VMs (Cleaned of Host references)
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cpuBar = document.getElementById(`vm-cpu-${vm.vmid}`);
@@ -227,6 +336,11 @@
                 .catch(err => console.error("Update failed:", err));
         }
         setInterval(updateStats, 3000);
+
+        // Close modal on Escape key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") closeInfoMenu();
+        });
     </script>
 </body>
 </html>
