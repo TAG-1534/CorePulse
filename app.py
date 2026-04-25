@@ -1,37 +1,44 @@
 import os
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template
 import docker
-import requests
 
 app = Flask(__name__)
 client = docker.from_env()
 
-# Config from environment variables (set these in Portainer)
-TRUENAS_IP = os.getenv("TRUENAS_IP")
-TRUENAS_API_KEY = os.getenv("TRUENAS_API_KEY")
-
 @app.route('/')
 def index():
-    # Fetch Docker Containers
-    containers = []
-    for c in client.containers.list(all=True):
-        containers.append({
+    all_containers = client.containers.list(all=True)
+    
+    # We will organize containers here
+    groups = {
+        "Immich": {
+            "is_group": True,
+            "services": [],
+            "status": "exited", # Default
+            "url": "http://192.168.1.50:2283" # Your Immich Web Port
+        },
+        "Other Apps": {
+            "is_group": False,
+            "services": []
+        }
+    }
+
+    for c in all_containers:
+        container_info = {
             "name": c.name,
             "status": c.status,
-            "image": c.image.tags[0] if c.image.tags else "N/A"
-        })
-    return render_template('index.html', containers=containers, tn_ip=TRUENAS_IP)
+        }
 
-@app.route('/api/stats')
-def stats():
-    # Fetch TrueNAS Pool/System Info
-    headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
-    try:
-        # Example endpoint for system info (adjust for SCALE/CORE)
-        response = requests.get(f"http://{TRUENAS_IP}/api/v2.0/system/info", headers=headers, timeout=3)
-        return jsonify(response.json())
-    except Exception as e:
-        return jsonify({"error": str(e)})
+        # Check if the container belongs to Immich
+        if "immich" in c.name.lower():
+            groups["Immich"]["services"].append(container_info)
+            # If at least one part of Immich is running, show active status
+            if c.status == "running":
+                groups["Immich"]["status"] = "running"
+        else:
+            groups["Other Apps"]["services"].append(container_info)
+
+    return render_template('index.html', groups=groups)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
