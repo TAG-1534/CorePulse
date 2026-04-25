@@ -179,5 +179,25 @@
         </div>
         {% endfor %}
     </div>
+    <script>
+    function updateStats() {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                // Update CPU
+                document.getElementById('cpu-text').innerText = data.cpu_usage + '%';
+                document.getElementById('cpu-bar').style.width = data.cpu_usage + '%';
+                
+                // Update RAM
+                document.getElementById('ram-text').innerText = data.ram_used + ' / ' + data.ram_total;
+                document.getElementById('ram-percent-text').innerText = data.ram_percent + '%';
+                document.getElementById('ram-bar').style.width = data.ram_percent + '%';
+            })
+            .catch(err => console.error('Error fetching stats:', err));
+    }
+
+    // Update every 3 seconds
+    setInterval(updateStats, 3000);
+</script>
 </body>
 </html>
