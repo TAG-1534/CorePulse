@@ -11,6 +11,10 @@ services:
     environment:
       - TRUENAS_IP=${TRUENAS_IP}
       - TRUENAS_API_KEY=${TRUENAS_API_KEY}
+      - PROXMOX_URL=${PROXMOX_URL}
+      - PROXMOX_NODE=${PROXMOX_NODE}
+      - PROXMOX_TOKEN_ID=${PROXMOX_TOKEN_ID}
+      - PROXMOX_TOKEN_SECRET=${PROXMOX_TOKEN_SECRET}
       - PROCFS_PATH=/host/proc
     pid: "host"
     network_mode: "bridge"
