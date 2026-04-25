@@ -28,7 +28,7 @@ PORT_MAP = {
     "plex": {"port": "32400", "proto": "http"},
     "pihole": {"port": "80", "proto": "http"},
     "portainer": {"port": "9443", "proto": "https"},  # Note the https
-    "vaultstream": {"port": "5005", "proto": "http"}
+    "VaultStream": {"port": "5005", "proto": "http"}
 }
 
 def format_bytes(size):
