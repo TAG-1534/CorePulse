@@ -24,11 +24,11 @@ PROXMOX_TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 
 PORTAINER_IP = os.getenv("PORTAINER_IP")
 PORT_MAP = {
-    "immich_server": "2283",
-    "plex": "32400",
-    "pihole": "80",
-    "portainer": "9443",
-    "vaultstream": "5005"
+    "immich_server": {"port": "2283", "proto": "http"},
+    "plex": {"port": "32400", "proto": "http"},
+    "pihole": {"port": "80", "proto": "http"},
+    "portainer": {"port": "9443", "proto": "https"},  # Note the https
+    "vaultstream": {"port": "5005", "proto": "http"}
 }
 
 def format_bytes(size):
@@ -120,15 +120,32 @@ def index():
 
     for c in all_containers:
         name = c.name.lstrip('/')
-        port = PORT_MAP.get(name, "")
-        url = f"http://{PORTAINER_IP}:{port}" if port else "#"
+        
+        # Get config from map, or use default fallback
+        config = PORT_MAP.get(name)
+        
+        if config:
+            proto = config.get("proto", "http")
+            port = config.get("port", "")
+            # Use PORTAINER_IP for containers, or fall back to TRUENAS_IP
+            host = PORTAINER_IP or TRUENAS_IP
+            url = f"{proto}://{host}:{port}"
+        else:
+            url = "#" # No config found, button won't do anything
+
         if "immich" in name.lower():
             groups["Immich"]["services"].append({"name": name, "status": c.status})
-            if c.status == "running": groups["Immich"]["status"] = "running"
+            if c.status == "running":
+                groups["Immich"]["status"] = "running"
+                # Update Immich main URL from the map specifically
+                immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
+                groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
         else:
             groups["Apps"].append({
-                "name": name, "status": c.status, 
-                "icon_url": get_icon_url(name), "url": url
+                "name": name, 
+                "status": c.status, 
+                "icon_url": get_icon_url(name), 
+                "url": url
             })
 
    # --- TrueNAS Storage Logic ---
