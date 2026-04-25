@@ -111,16 +111,16 @@ def index():
 
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
-    groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
-    groups["Immich"]["url"] = f"http://{TRUENAS_IP}:{PORT_MAP.get('immich_server', '2283')}"
+    groups = {"immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
+    groups["immich"]["url"] = f"http://{TRUENAS_IP}:{PORT_MAP.get('immich_server', '2283')}"
 
     for c in all_containers:
         name = c.name.lstrip('/')
         port = PORT_MAP.get(name, "")
         url = f"http://{TRUENAS_IP}:{port}" if port else "#"
         if "immich" in name.lower():
-            groups["Immich"]["services"].append({"name": name, "status": c.status})
-            if c.status == "running": groups["Immich"]["status"] = "running"
+            groups["immich"]["services"].append({"name": name, "status": c.status})
+            if c.status == "running": groups["immich"]["status"] = "running"
         else:
             groups["Apps"].append({
                 "name": name, "status": c.status, 
