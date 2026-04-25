@@ -197,6 +197,7 @@
             </div>
             <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
             <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
+            <p>IP Address: <span>{{ app.url}}</span></p>
         </div>
         {% endfor %}
     </div>
