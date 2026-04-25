@@ -66,14 +66,15 @@ def get_proxmox_stats():
                 mem_pct = round((curr_mem / max_mem) * 100, 1) if max_mem > 0 else 0
                 # Update the vms.append section in your get_proxmox_stats function:
                 vms.append({
-                    "name": vm['name'],
-                    "status": vm['status'],
-                    "vmid": vm['vmid'],
-                    "cpu": cpu,
-                    "mem_pct": mem_pct,
-                    "mem_used": format_bytes(curr_mem),  # Already there
-                    "mem_max": format_bytes(max_mem)     # Add this line
-                })
+                "name": vm['name'],
+                "status": vm['status'],
+                "vmid": vm['vmid'],
+                "cpu": cpu,
+                "mem_pct": mem_pct,
+                "mem_used": format_bytes(curr_mem),
+                "mem_max": format_bytes(max_mem),
+                "console_url": f"{PROXMOX_URL}/#v1:0:18:4::{vm['vmid']}" # Direct link to VM console
+            })
             return sorted(vms, key=lambda x: x['vmid'])
     except Exception as e:
         print(f"Proxmox Error: {e}")
