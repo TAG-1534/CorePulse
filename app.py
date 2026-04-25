@@ -118,7 +118,7 @@ def index():
         name = c.name.lstrip('/')
         port = PORT_MAP.get(name, "")
         url = f"http://{TRUENAS_IP}:{port}" if port else "#"
-        if "Immich" in name.lower():
+        if "immich" in name.lower():
             groups["Immich"]["services"].append({"name": name, "status": c.status})
             if c.status == "running": groups["Immich"]["status"] = "running"
         else:
