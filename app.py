@@ -6,7 +6,7 @@ import docker
 import requests
 import urllib3
 import psutil
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -42,6 +42,19 @@ def get_icon_url(name):
     elif "truenas" in name: slug = "truenas"
     else: slug = "docker"
     return f"{ICON_BASE}/{slug}.png"
+
+@app.route('/api/stats')
+def api_stats():
+    vm = psutil.virtual_memory()
+    # Using a very small interval for the live "pulse"
+    cpu_usage = psutil.cpu_percent(interval=0.1)
+    
+    return jsonify({
+        "cpu_usage": cpu_usage,
+        "ram_percent": vm.percent,
+        "ram_used": format_bytes(vm.used),
+        "ram_total": format_bytes(vm.total)
+    })
 
 @app.route('/')
 def index():
