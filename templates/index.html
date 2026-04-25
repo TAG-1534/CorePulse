@@ -47,6 +47,7 @@
             width: 32px;
             height: 32px;
             border-radius: 6px;
+            object-fit: contain;
         }
 
         .title-area h2 {
@@ -94,22 +95,23 @@
     <div class="grid">
         <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
             <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkx86/dashboard-icons/png/truenas.png" alt="icon">
+                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
                 <h2>TrueNAS Storage Status</h2>
                 <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
             </div>
-            <div style="display: flex; gap: 20px;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 {% for pool in nas.pools %}
-                <div class="sub-service" style="flex: 1;">
+                <div class="sub-service" style="flex: 1; min-width: 200px;">
                     <strong>Pool: {{ pool.name }}</strong>
                     <span>Status: {{ pool.status }}</span>
                 </div>
                 {% endfor %}
             </div>
         </div>
+
         <div class="card">
             <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkx86/dashboard-icons/png/immich.png" alt="icon">
+                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
                 <h2>Immich Photos</h2>
             </div>
             <p>Status: <span class="status-{{ groups['Immich']['status'] }}">● {{ groups['Immich']['status'].upper() }}</span></p>
@@ -119,13 +121,15 @@
                 <span class="status-{{ s.status }}">●</span>
             </div>
             {% endfor %}
-            <a href="http://YOUR_IP:2283" class="btn">Open Interface</a>
+            <a href="http://{{ nas_ip }}:2283" class="btn">Open Interface</a>
         </div>
 
         {% for app in groups['Apps'] %}
         <div class="card">
             <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkx86/dashboard-icons/png/{{ app.icon }}.png" alt="icon">
+                <img src="{{ app.icon_url }}" 
+                     alt="icon" 
+                     onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
                 <h2>{{ app.name }}</h2>
             </div>
             <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
