@@ -6,7 +6,12 @@ services:
       - "8085:5000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
     environment:
       - TRUENAS_IP=${TRUENAS_IP}
       - TRUENAS_API_KEY=${TRUENAS_API_KEY}
+      - PROCFS_PATH=/host/proc
+    pid: "host"
+    network_mode: "bridge"
     restart: always
