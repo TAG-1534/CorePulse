@@ -158,9 +158,41 @@
             </div>
         </div>
 
+        <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
+            <div class="title-area">
+                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
+                <h2>TrueNAS Storage Status</h2>
+                <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                {% for pool in nas.pools %}
+                <div class="sub-service" style="flex: 1; min-width: 280px; flex-direction: column; align-items: flex-start;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;">
+                        <strong>Pool: {{ pool.name }} ({{ pool.status }})</strong>
+                        <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}% Used</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">
+                        {{ pool.used_str }} Used / {{ pool.total_str }} Total
+                    </div>
+                    <div class="progress-bg">
+                        <div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
-    <script>
+        {% for app in groups['Apps'] %}
+        <div class="card">
+            <div class="title-area">
+                <img src="{{ app.icon_url }}" alt="icon" onerror="this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
+                <h2>{{ app.name }}</h2>
+            </div>
+            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+            <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
+        </div>
+        {% endfor %}
+    </div> <script>
         function updateStats() {
             fetch('/api/stats')
                 .then(response => response.json())
@@ -188,7 +220,6 @@
                 .catch(err => console.error("Update failed:", err));
         }
 
-        // Run every 3 seconds
         setInterval(updateStats, 3000);
     </script>
 </body>
