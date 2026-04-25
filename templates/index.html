@@ -19,7 +19,6 @@
             gap: 25px;
         }
 
-        /* The Glass Effect */
         .card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px);
@@ -83,38 +82,12 @@
             transition: 0.3s;
         }
 
-        .btn:hover {
-            background: #38bdf8;
-            color: #0f172a;
-        }
+        .btn:hover { background: #38bdf8; color: #0f172a; }
     </style>
 </head>
 <body>
     <h1 style="margin-bottom: 40px; font-weight: 800;">System Command</h1>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
-            {% for pool in nas.pools %}
-            <div class="sub-service" style="flex: 1; min-width: 250px; flex-direction: column; align-items: flex-start;">
-                <div style="display: flex; justify-content: space-between; width: 100%;">
-                    <strong>{{ pool.name }} ({{ pool.status }})</strong>
-                    <span>{{ pool.usage }} Used</span>
-                </div>
-                <div style="width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-top: 8px;">
-                    <div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%; border-radius: 4px;"></div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        
-        {% for app in groups['Apps'] %}
-        <div class="card">
-            <div class="title-area">
-                <img src="{{ app.icon_url }}" onerror="this.src='...'">
-                <h2>{{ app.name }}</h2>
-            </div>
-            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
-            <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
-        </div>
-        {% endfor %}
+    
     <div class="grid">
         <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
             <div class="title-area">
@@ -124,9 +97,14 @@
             </div>
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 {% for pool in nas.pools %}
-                <div class="sub-service" style="flex: 1; min-width: 200px;">
-                    <strong>Pool: {{ pool.name }}</strong>
-                    <span>Status: {{ pool.status }}</span>
+                <div class="sub-service" style="flex: 1; min-width: 250px; flex-direction: column; align-items: flex-start;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <strong>Pool: {{ pool.name }} ({{ pool.status }})</strong>
+                        <span>{{ pool.usage }} Used</span>
+                    </div>
+                    <div style="width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-top: 8px;">
+                        <div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%; border-radius: 4px;"></div>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -144,7 +122,7 @@
                 <span class="status-{{ s.status }}">●</span>
             </div>
             {% endfor %}
-            <a href="http://{{ nas_ip }}:2283" class="btn">Open Interface</a>
+            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn">Open Interface</a>
         </div>
 
         {% for app in groups['Apps'] %}
@@ -156,7 +134,7 @@
                 <h2>{{ app.name }}</h2>
             </div>
             <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
-            <a href="#" class="btn">Launch App</a>
+            <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
         </div>
         {% endfor %}
     </div>
