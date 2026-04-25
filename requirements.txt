@@ -1,3 +1,5 @@
-flask
+Flask
 docker
 requests
+urllib3
+psutil
