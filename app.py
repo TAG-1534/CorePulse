@@ -21,7 +21,34 @@ PORT_MAP = {
     "portainer": "9000",
     "vaultstream": "5005"
 }
+def format_bytes(size):
+    # Convert bytes to human readable format (GB or TB)
+    power = 2**10
+    n = 0
+    power_labels = {0 : '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
+    while size > power:
+        size /= power
+        n += 1
+    return f"{round(size, 2)}{power_labels[n]}B"
 
+# Inside your @app.route('/') under the TrueNAS logic:
+for p in r.json():
+    stats = p.get('topology', {}).get('data', [{}])[0].get('stats', {})
+    total_raw = stats.get('size', 0)
+    alloc_raw = stats.get('allocated', 0)
+    free_raw = total_raw - alloc_raw
+    
+    percent = round((alloc_raw / total_raw) * 100, 1) if total_raw > 0 else 0
+    
+    nas_stats["pools"].append({
+        "name": p['name'],
+        "status": p['status'],
+        "used_str": format_bytes(alloc_raw),
+        "total_str": format_bytes(total_raw),
+        "free_str": format_bytes(free_raw),
+        "raw_percent": percent
+    })
+    
 def get_icon_url(name):
     name = name.lower()
     ICON_BASE = "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png"
