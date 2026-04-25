@@ -17,9 +17,9 @@ TRUENAS_IP = os.getenv("TRUENAS_IP")
 TRUENAS_API_KEY = os.getenv("TRUENAS_API_KEY")
 
 # Proxmox Config
-PROXMOX_URL = os.getenv("PROXMOX_URL") # e.g., https://192.168.1.50:8006/api2/json
-PROXMOX_NODE = os.getenv("PROXMOX_NODE") # e.g., pve
-PROXMOX_TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID") # e.g., root@pam!dashboard
+PROXMOX_URL = os.getenv("PROXMOX_URL")
+PROXMOX_NODE = os.getenv("PROXMOX_NODE")
+PROXMOX_TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
 PROXMOX_TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 
 PORT_MAP = {
@@ -49,41 +49,19 @@ def get_icon_url(name):
     else: slug = "docker"
     return f"{ICON_BASE}/{slug}.png"
 
-@app.route('/api/stats')
-def api_stats():
-    vm = psutil.virtual_memory()
-    # Using a very small interval for the live "pulse"
-    cpu_usage = psutil.cpu_percent(interval=0.1)
-    
-    return jsonify({
-        "cpu_usage": cpu_usage,
-        "ram_percent": vm.percent,
-        "ram_used": format_bytes(vm.used),
-        "ram_total": format_bytes(vm.total)
-    })
-
 def get_proxmox_stats():
-    url = os.getenv("PROXMOX_URL")
-    node = os.getenv("PROXMOX_NODE")
-    token_id = os.getenv("PROXMOX_TOKEN_ID")
-    token_secret = os.getenv("PROXMOX_TOKEN_SECRET")
-    
-    if not all([url, node, token_id, token_secret]):
+    if not all([PROXMOX_URL, PROXMOX_NODE, PROXMOX_TOKEN_ID, PROXMOX_TOKEN_SECRET]):
         return []
-
-    headers = {"Authorization": f"PVEAPIToken={token_id}={token_secret}"}
+    headers = {"Authorization": f"PVEAPIToken={PROXMOX_TOKEN_ID}={PROXMOX_TOKEN_SECRET}"}
     try:
-        # Get all QEMU (VM) instances on the node
-        r = requests.get(f"{url}/nodes/{node}/qemu", headers=headers, verify=False, timeout=2)
+        r = requests.get(f"{PROXMOX_URL}/nodes/{PROXMOX_NODE}/qemu", headers=headers, verify=False, timeout=2)
         if r.status_code == 200:
             vms = []
             for vm in r.json()['data']:
-                # Calculate percentages
                 cpu = round(vm.get('cpu', 0) * 100, 1)
                 max_mem = vm.get('maxmem', 1)
                 curr_mem = vm.get('mem', 0)
                 mem_pct = round((curr_mem / max_mem) * 100, 1) if max_mem > 0 else 0
-                
                 vms.append({
                     "name": vm['name'],
                     "status": vm['status'],
@@ -97,27 +75,29 @@ def get_proxmox_stats():
         print(f"Proxmox Error: {e}")
     return []
 
-# Then in your index() route:
-@app.route('/')
-def index():
-    # ... your existing system_stats and nas_stats ...
+@app.route('/api/stats')
+def api_stats():
+    vm = psutil.virtual_memory()
+    system_stats = {
+        "cpu_usage": psutil.cpu_percent(interval=0.1),
+        "ram_percent": vm.percent,
+        "ram_used": format_bytes(vm.used),
+        "ram_total": format_bytes(vm.total)
+    }
+    # Including Proxmox in the live update
     vm_list = get_proxmox_stats()
-    
-    return render_template('index.html', 
-                           groups=groups, 
-                           nas=nas_stats, 
-                           system=system_stats, 
-                           vms=vm_list, # Add this
-                           nas_ip=TRUENAS_IP)
+    return jsonify({
+        "system": system_stats,
+        "vms": vm_list
+    })
 
 @app.route('/')
 def index():
     # --- Host System Stats ---
     vm = psutil.virtual_memory()
     cpu_freq = psutil.cpu_freq()
-    
     system_stats = {
-        "cpu_usage": psutil.cpu_percent(interval=0.1), # 0.1s interval for accuracy
+        "cpu_usage": psutil.cpu_percent(interval=0.1),
         "cpu_count": psutil.cpu_count(logical=True),
         "cpu_mhz": round(cpu_freq.current, 0) if cpu_freq else "N/A",
         "ram_total": format_bytes(vm.total),
@@ -126,26 +106,25 @@ def index():
         "ram_percent": vm.percent
     }
 
+    # --- Proxmox Logic ---
+    vm_list = get_proxmox_stats()
+
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
-    
     groups["Immich"]["url"] = f"http://{TRUENAS_IP}:{PORT_MAP.get('immich_server', '2283')}"
 
     for c in all_containers:
         name = c.name.lstrip('/')
         port = PORT_MAP.get(name, "")
         url = f"http://{TRUENAS_IP}:{port}" if port else "#"
-
         if "immich" in name.lower():
             groups["Immich"]["services"].append({"name": name, "status": c.status})
             if c.status == "running": groups["Immich"]["status"] = "running"
         else:
             groups["Apps"].append({
-                "name": name, 
-                "status": c.status, 
-                "icon_url": get_icon_url(name),
-                "url": url
+                "name": name, "status": c.status, 
+                "icon_url": get_icon_url(name), "url": url
             })
 
    # --- TrueNAS Storage Logic ---
@@ -159,20 +138,11 @@ def index():
                 for p in r.json():
                     topology = p.get('topology', {})
                     data_vdevs = topology.get('data', [])
-                    
-                    total_raw = 0
-                    alloc_raw = 0
-                    
-                    for vdev in data_vdevs:
-                        vdev_stats = vdev.get('stats', {})
-                        total_raw += vdev_stats.get('size', 0)
-                        alloc_raw += vdev_stats.get('allocated', 0)
-                    
+                    total_raw = sum(v.get('stats', {}).get('size', 0) for v in data_vdevs)
+                    alloc_raw = sum(v.get('stats', {}).get('allocated', 0) for v in data_vdevs)
                     percent = round((alloc_raw / total_raw) * 100, 1) if total_raw > 0 else 0
-                    
                     nas_stats["pools"].append({
-                        "name": p['name'],
-                        "status": p['status'],
+                        "name": p['name'], "status": p['status'],
                         "used_str": format_bytes(alloc_raw),
                         "total_str": format_bytes(total_raw),
                         "free_str": format_bytes(total_raw - alloc_raw),
@@ -181,11 +151,11 @@ def index():
         except Exception as e:
             print(f"Error connecting to TrueNAS: {e}")
 
-    # FIXED: Added system=system_stats here
     return render_template('index.html', 
                            groups=groups, 
                            nas=nas_stats, 
                            system=system_stats, 
+                           vms=vm_list,
                            nas_ip=TRUENAS_IP)
 
 if __name__ == "__main__":
