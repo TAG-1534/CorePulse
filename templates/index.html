@@ -2,43 +2,121 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Home Lab Dashboard</title>
+    <title>Glass Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; position: relative; }
-        .status-running { color: #4ade80; }
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        /* The Glass Effect */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .title-area img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .status-running { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
         .status-exited { color: #f87171; }
-        .sub-service { font-size: 0.85em; background: #334155; margin: 4px 0; padding: 4px 8px; border-radius: 4px; display: flex; justify-content: space-between; }
-        .btn { display: block; text-align: center; margin-top: 15px; padding: 10px; background: #38bdf8; color: #0f172a; text-decoration: none; border-radius: 6px; font-weight: bold; }
+
+        .sub-service {
+            background: rgba(255, 255, 255, 0.03);
+            margin: 6px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+            text-decoration: none;
+            border-radius: 10px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
     </style>
 </head>
 <body>
-    <h1>My Custom Dashboard</h1>
+    <h1 style="margin-bottom: 40px; font-weight: 800;">System Command</h1>
+    
     <div class="grid">
-        
         <div class="card">
-            <h2>Immich Photos</h2>
-            <p>Global Status: <span class="status-{{ groups['Immich']['status'] }}">● {{ groups['Immich']['status'].upper() }}</span></p>
-            <div class="sub-services">
-                {% for s in groups['Immich']['services'] %}
-                <div class="sub-service">
-                    <span>{{ s.name }}</span>
-                    <span class="status-{{ s.status }}">●</span>
-                </div>
-                {% endfor %}
+            <div class="title-area">
+                <img src="https://cdn.jsdelivr.net/gh/walkx86/dashboard-icons/png/immich.png" alt="icon">
+                <h2>Immich Photos</h2>
             </div>
-            <a href="{{ groups['Immich']['url'] }}" class="btn">Open Immich</a>
+            <p>Status: <span class="status-{{ groups['Immich']['status'] }}">● {{ groups['Immich']['status'].upper() }}</span></p>
+            {% for s in groups['Immich']['services'] %}
+            <div class="sub-service">
+                <span>{{ s.name }}</span>
+                <span class="status-{{ s.status }}">●</span>
+            </div>
+            {% endfor %}
+            <a href="http://YOUR_IP:2283" class="btn">Open Interface</a>
         </div>
 
-        {% for c in groups['Other Apps']['services'] %}
+        {% for app in groups['Apps'] %}
         <div class="card">
-            <h2>{{ c.name }}</h2>
-            <p>Status: <span class="status-{{ c.status }}">● {{ c.status.upper() }}</span></p>
-            <a href="#" class="btn">Open App</a>
+            <div class="title-area">
+                <img src="https://cdn.jsdelivr.net/gh/walkx86/dashboard-icons/png/{{ app.icon }}.png" alt="icon">
+                <h2>{{ app.name }}</h2>
+            </div>
+            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+            <a href="#" class="btn">Launch App</a>
         </div>
         {% endfor %}
-
     </div>
 </body>
 </html>
