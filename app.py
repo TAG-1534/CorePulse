@@ -63,7 +63,7 @@ def index():
                 "url": url
             })
 
-    # --- TrueNAS Storage Logic ---
+   # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
     if TRUENAS_IP and TRUENAS_API_KEY:
         headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
@@ -72,11 +72,20 @@ def index():
             if r.status_code == 200:
                 nas_stats["status"] = "Online"
                 for p in r.json():
-                    stats = p.get('topology', {}).get('data', [{}])[0].get('stats', {})
-                    total_raw = stats.get('size', 0)
-                    alloc_raw = stats.get('allocated', 0)
-                    free_raw = total_raw - alloc_raw
+                    # Get the top-level topology
+                    topology = p.get('topology', {})
+                    data_vdevs = topology.get('data', [])
                     
+                    total_raw = 0
+                    alloc_raw = 0
+                    
+                    # Sum up all Data VDEVs to get the full pool capacity
+                    for vdev in data_vdevs:
+                        vdev_stats = vdev.get('stats', {})
+                        total_raw += vdev_stats.get('size', 0)
+                        alloc_raw += vdev_stats.get('allocated', 0)
+                    
+                    free_raw = total_raw - alloc_raw
                     percent = round((alloc_raw / total_raw) * 100, 1) if total_raw > 0 else 0
                     
                     nas_stats["pools"].append({
