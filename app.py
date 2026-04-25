@@ -54,7 +54,8 @@ def get_proxmox_stats():
         return []
     headers = {"Authorization": f"PVEAPIToken={PROXMOX_TOKEN_ID}={PROXMOX_TOKEN_SECRET}"}
     try:
-        r = requests.get(f"{PROXMOX_URL}/nodes/{PROXMOX_NODE}/qemu", headers=headers, verify=False, timeout=2)
+        # The standard Proxmox API path for QEMU (VMs)
+        r = requests.get(f"{PROXMOX_URL}/api2/json/nodes/{PROXMOX_NODE}/qemu", headers=headers, verify=False, timeout=2)
         if r.status_code == 200:
             vms = []
             for vm in r.json()['data']:
