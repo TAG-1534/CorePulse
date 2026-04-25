@@ -2,6 +2,7 @@ import os
 import docker
 import requests
 import urllib3
+import psutil
 from flask import Flask, render_template
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -41,6 +42,20 @@ def get_icon_url(name):
 
 @app.route('/')
 def index():
+    # --- Host System Stats ---
+    vm = psutil.virtual_memory()
+    cpu_freq = psutil.cpu_freq()
+    
+    system_stats = {
+        "cpu_usage": psutil.cpu_percent(interval=None),
+        "cpu_count": psutil.cpu_count(logical=True),
+        "cpu_mhz": round(cpu_freq.current, 0) if cpu_freq else "N/A",
+        "ram_total": format_bytes(vm.total),
+        "ram_used": format_bytes(vm.used),
+        "ram_free": format_bytes(vm.available),
+        "ram_percent": vm.percent,
+        "boot_time": psutil.boot_time() # Optional
+    }
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
