@@ -1,4 +1,7 @@
 import os
+# This MUST come before importing psutil to work correctly in Docker
+os.environ['PROCFS_PATH'] = '/host/proc'
+
 import docker
 import requests
 import urllib3
@@ -47,15 +50,15 @@ def index():
     cpu_freq = psutil.cpu_freq()
     
     system_stats = {
-        "cpu_usage": psutil.cpu_percent(interval=None),
+        "cpu_usage": psutil.cpu_percent(interval=0.1), # 0.1s interval for accuracy
         "cpu_count": psutil.cpu_count(logical=True),
         "cpu_mhz": round(cpu_freq.current, 0) if cpu_freq else "N/A",
         "ram_total": format_bytes(vm.total),
         "ram_used": format_bytes(vm.used),
         "ram_free": format_bytes(vm.available),
-        "ram_percent": vm.percent,
-        "boot_time": psutil.boot_time() # Optional
+        "ram_percent": vm.percent
     }
+
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
@@ -87,20 +90,17 @@ def index():
             if r.status_code == 200:
                 nas_stats["status"] = "Online"
                 for p in r.json():
-                    # Get the top-level topology
                     topology = p.get('topology', {})
                     data_vdevs = topology.get('data', [])
                     
                     total_raw = 0
                     alloc_raw = 0
                     
-                    # Sum up all Data VDEVs to get the full pool capacity
                     for vdev in data_vdevs:
                         vdev_stats = vdev.get('stats', {})
                         total_raw += vdev_stats.get('size', 0)
                         alloc_raw += vdev_stats.get('allocated', 0)
                     
-                    free_raw = total_raw - alloc_raw
                     percent = round((alloc_raw / total_raw) * 100, 1) if total_raw > 0 else 0
                     
                     nas_stats["pools"].append({
@@ -108,13 +108,18 @@ def index():
                         "status": p['status'],
                         "used_str": format_bytes(alloc_raw),
                         "total_str": format_bytes(total_raw),
-                        "free_str": format_bytes(free_raw),
+                        "free_str": format_bytes(total_raw - alloc_raw),
                         "raw_percent": percent
                     })
         except Exception as e:
             print(f"Error connecting to TrueNAS: {e}")
 
-    return render_template('index.html', groups=groups, nas=nas_stats, nas_ip=TRUENAS_IP)
+    # FIXED: Added system=system_stats here
+    return render_template('index.html', 
+                           groups=groups, 
+                           nas=nas_stats, 
+                           system=system_stats, 
+                           nas_ip=TRUENAS_IP)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
