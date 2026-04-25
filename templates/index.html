@@ -104,103 +104,92 @@
                 <h2>Host System Status</h2>
             </div>
             
-           <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
-                <div class="title-area">
-                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
-                    <h2>Virtual Machines (Proxmox)</h2>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
-                    {% for vm in vms %}
-                    <div class="sub-service" style="flex-direction: column; align-items: stretch; padding: 12px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
-                            <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}">● {{ vm.status.upper() }}</span>
-                        </div>
-                        
-                        {% if vm.status == 'running' %}
-                        <div style="font-size: 0.75rem; margin-bottom: 4px;">CPU: {{ vm.cpu }}% | RAM: {{ vm.mem_pct }}% ({{ vm.mem_used }})</div>
-                        <div class="progress-bg" style="height: 4px; margin-bottom: 4px;">
-                            <div style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
-                        </div>
-                        <div class="progress-bg" style="height: 4px;">
-                            <div style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-        <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
-            <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
-                <h2>TrueNAS Storage Status</h2>
-                <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
-            </div>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                {% for pool in nas.pools %}
-                <div class="sub-service" style="flex: 1; min-width: 280px; flex-direction: column; align-items: flex-start;">
-                    <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;">
-                        <strong>Pool: {{ pool.name }} ({{ pool.status }})</strong>
-                        <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}% Used</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">
-                        {{ pool.used_str }} Used / {{ pool.total_str }} Total / <span style="color: #4ade80;">{{ pool.free_str }} Free</span>
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>CPU Usage ({{ system.cpu_count }} Cores)</strong>
+                        <span id="host-cpu-text">{{ system.cpu_usage }}%</span>
                     </div>
                     <div class="progress-bg">
-                        <div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);"></div>
+                        <div id="host-cpu-bar" style="width: {{ system.cpu_usage }}%; background: #4ade80; height: 100%;"></div>
                     </div>
+                </div>
+
+                <div style="flex: 1; min-width: 250px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong>RAM: <span id="host-ram-text">{{ system.ram_used }} / {{ system.ram_total }}</span></strong>
+                        <span id="host-ram-pct">{{ system.ram_percent }}%</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div id="host-ram-bar" style="width: {{ system.ram_percent }}%; background: #a855f7; height: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
+            <div class="title-area">
+                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
+                <h2>Virtual Machines (Proxmox)</h2>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                {% for vm in vms %}
+                <div class="sub-service" style="flex-direction: column; align-items: stretch; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
+                        <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}">● {{ vm.status.upper() }}</span>
+                    </div>
+                    
+                    {% if vm.status == 'running' %}
+                    <div style="font-size: 0.75rem; margin-bottom: 4px;">
+                        CPU: <span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>% | 
+                        RAM: <span id="text-mem-{{ vm.vmid }}">{{ vm.mem_pct }}</span>%
+                    </div>
+                    <div class="progress-bg" style="height: 4px; margin-bottom: 4px;">
+                        <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
+                    </div>
+                    <div class="progress-bg" style="height: 4px;">
+                        <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <div class="card">
-            <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
-                <h2>Immich Photos</h2>
-            </div>
-            <p>Status: <span class="status-{{ groups['Immich']['status'] }}">● {{ groups['Immich']['status'].upper() }}</span></p>
-            {% for s in groups['Immich']['services'] %}
-            <div class="sub-service">
-                <span>{{ s.name }}</span>
-                <span class="status-{{ s.status }}">●</span>
-            </div>
-            {% endfor %}
-            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn">Open Interface</a>
         </div>
 
-        {% for app in groups['Apps'] %}
-        <div class="card">
-            <div class="title-area">
-                <img src="{{ app.icon_url }}" 
-                     alt="icon" 
-                     onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
-                <h2>{{ app.name }}</h2>
-            </div>
-            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
-            <a href="{{ app.url }}" target="_blank" class="btn">Launch App</a>
-        </div>
-        {% endfor %}
-    </div>
     <script>
-   function updateStats() {
-    fetch('/api/stats')
-        .then(response => response.json())
-        .then(data => {
-            // Update Host stats
-            document.getElementById('cpu-bar').style.width = data.system.cpu_usage + '%';
-            
-            // Update VM stats
-            data.vms.forEach(vm => {
-                const cpuBar = document.getElementById(`vm-cpu-${vm.vmid}`);
-                const memBar = document.getElementById(`vm-mem-${vm.vmid}`);
-                if(cpuBar) cpuBar.style.width = vm.cpu + '%';
-                if(memBar) memBar.style.width = vm.mem_pct + '%';
-            });
-        });
-}
-</script>
+        function updateStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Update Host
+                    document.getElementById('host-cpu-bar').style.width = data.system.cpu_usage + '%';
+                    document.getElementById('host-cpu-text').innerText = data.system.cpu_usage + '%';
+                    document.getElementById('host-ram-bar').style.width = data.system.ram_percent + '%';
+                    document.getElementById('host-ram-pct').innerText = data.system.ram_percent + '%';
+                    document.getElementById('host-ram-text').innerText = data.system.ram_used + ' / ' + data.system.ram_total;
+                    
+                    // Update VMs
+                    data.vms.forEach(vm => {
+                        const cpuBar = document.getElementById(`vm-cpu-${vm.vmid}`);
+                        const memBar = document.getElementById(`vm-mem-${vm.vmid}`);
+                        const cpuText = document.getElementById(`text-cpu-${vm.vmid}`);
+                        const memText = document.getElementById(`text-mem-${vm.vmid}`);
+                        
+                        if(cpuBar) cpuBar.style.width = vm.cpu + '%';
+                        if(memBar) memBar.style.width = vm.mem_pct + '%';
+                        if(cpuText) cpuText.innerText = vm.cpu;
+                        if(memText) memText.innerText = vm.mem_pct;
+                    });
+                })
+                .catch(err => console.error("Update failed:", err));
+        }
+
+        // Run every 3 seconds
+        setInterval(updateStats, 3000);
+    </script>
 </body>
 </html>
