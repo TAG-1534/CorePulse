@@ -6,6 +6,7 @@ import docker
 import requests
 import urllib3
 import psutil
+import re
 from flask import Flask, render_template, jsonify
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,6 +40,14 @@ def format_bytes(size):
         size /= power
         n += 1
     return f"{round(size, 2)}{power_labels[n]}B"
+
+def clean_name(name):
+    # 1. Replace underscores and hyphens with spaces
+    name = re.sub(r'[-_]', ' ', name)
+    # 2. Add a space before capital letters (e.g., VaultStream -> Vault Stream)
+    name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+    # 3. Capitalize the first letter of every word
+    return name.title()
 
 def get_icon_url(name):
     name = name.lower()
@@ -118,11 +127,13 @@ def index():
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
     
-    for c in all_containers:
-        name = c.name.lstrip('/')
+   for c in all_containers:
+        raw_name = c.name.lstrip('/')
+        # Use our new function to make it look nice
+        display_name = clean_name(raw_name)
         
-        # Get config from map using lowercase to avoid naming mismatches
-        config = PORT_MAP.get(name) or PORT_MAP.get(name.lower())
+        # Get config from map (check both raw and cleaned to be safe)
+        config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
         
         if config:
             proto = config.get("proto", "http")
@@ -132,23 +143,22 @@ def index():
         else:
             url = "#"
 
-        # Get image tag for the modal
         image_name = c.image.tags[0] if c.image.tags else "Unknown Image"
 
-        if "immich" in name.lower():
-            groups["Immich"]["services"].append({"name": name, "status": c.status})
+        if "immich" in raw_name.lower():
+            groups["Immich"]["services"].append({"name": display_name, "status": c.status})
             if c.status == "running":
                 groups["Immich"]["status"] = "running"
                 immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
                 groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
         else:
             groups["Apps"].append({
-                "name": name, 
+                "name": display_name, # Beautifully formatted name
                 "status": c.status, 
-                "icon_url": get_icon_url(name), 
+                "icon_url": get_icon_url(raw_name), 
                 "url": url,
-                "image": image_name, # Critical for the modal!
-                "address": url       # Critical for the modal!
+                "image": image_name,
+                "address": url
             })
 
    # --- TrueNAS Storage Logic ---
