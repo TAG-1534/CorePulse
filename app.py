@@ -123,16 +123,20 @@ def index():
     # --- Proxmox Logic ---
     vm_list = get_proxmox_stats()
 
-  # --- Docker Logic ---
+    # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
     
-   for c in all_containers:
+    # Pre-fetch Immich URL if possible
+    immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
+    groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
+
+    for c in all_containers:
         raw_name = c.name.lstrip('/')
-        # Use our new function to make it look nice
+        # Use our cleaning function (Make sure clean_name(name) is defined above!)
         display_name = clean_name(raw_name)
         
-        # Get config from map (check both raw and cleaned to be safe)
+        # Get config from map
         config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
         
         if config:
@@ -149,11 +153,9 @@ def index():
             groups["Immich"]["services"].append({"name": display_name, "status": c.status})
             if c.status == "running":
                 groups["Immich"]["status"] = "running"
-                immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
-                groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
         else:
             groups["Apps"].append({
-                "name": display_name, # Beautifully formatted name
+                "name": display_name, 
                 "status": c.status, 
                 "icon_url": get_icon_url(raw_name), 
                 "url": url,
@@ -161,7 +163,7 @@ def index():
                 "address": url
             })
 
-   # --- TrueNAS Storage Logic ---
+    # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
     if TRUENAS_IP and TRUENAS_API_KEY:
         headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
