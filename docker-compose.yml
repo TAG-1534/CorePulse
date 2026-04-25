@@ -1,7 +1,9 @@
 version: '3.8'
+
 services:
   dashboard:
-    build: .
+    image: build: . # tag1534/glass-dashboard:latest   Or 'build: .' if you are building locally
+    container_name: glass-dashboard
     ports:
       - "8085:5000"
     volumes:
