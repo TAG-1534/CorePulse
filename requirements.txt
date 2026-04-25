@@ -3,4 +3,3 @@ docker
 requests
 urllib3
 psutil
-re
