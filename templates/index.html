@@ -168,15 +168,22 @@
     
     <div class="grid">
         <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
-            <div class="title-area">
+            <div class="title-area" style="margin-bottom: 10px;">
                 <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
                 <h2>Infrastructure Nodes (Proxmox)</h2>
-                <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
-                    <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); margin-top: 0; padding: 10px 20px; font-size: 0.85rem;">
-                        ⚙️ Proxmox Web GUI
-                    </a>
-                </div>
             </div>
+        
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
+                {% for vm in vms %}
+                {% endfor %}
+            </div>
+        
+            <div style="display: flex; justify-content: flex-end; width: 100%; margin-top: 20px;">
+                <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); margin: 0; padding: 10px 20px; font-size: 0.85rem; width: auto;">
+                    ⚙️ Proxmox Web GUI
+                </a>
+            </div>
+        </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                 {% for vm in vms %}
@@ -217,12 +224,19 @@
         </div>
 
         <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1);">
-            <div class="title-area">
-                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
-                <h2>TrueNAS Storage Status</h2>
-                <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
-                <div style="display: flex; justify-content: flex-end; margin-top: 25px;">
-                    <a href="http://{{ nas_ip }}" target="_blank" class="btn" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); margin-top: 0; padding: 10px 20px; font-size: 0.85rem;">
+                <div class="title-area" style="margin-bottom: 10px;">
+                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
+                    <h2>TrueNAS Storage Status</h2>
+                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
+                </div>
+            
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    {% for pool in nas.pools %}
+                    {% endfor %}
+                </div>
+            
+                <div style="display: flex; justify-content: flex-end; width: 100%; margin-top: 20px;">
+                    <a href="http://{{ nas_ip }}" target="_blank" class="btn" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); margin: 0; padding: 10px 20px; font-size: 0.85rem; width: auto;">
                         ⚙️ TrueNAS Scale Settings
                     </a>
                 </div>
