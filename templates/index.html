@@ -255,41 +255,38 @@
             <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Active Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
-
-        <div id="running-containers" style="display: contents;">
-          <div class="card" id="card-immich-group" 
-             style="display: {% if groups['Immich']['services']|length > 0 %} block {% else %} none {% endif %};">
-            
-            <button class="menu-btn" 
-                    onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', '{{ immich_url }}', 'immich-stack')">
-                ⋮
-            </button>
-            <div class="title-area" style="margin-bottom: 15px;">
-                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
-                <h2>Immich Photos</h2>
-            </div>
-            <div id="immich-sub-services" style="display: grid; gap: 8px;">
-                {% for app in groups['Immich']['services'] %}
-                    <div id="sub-{{ app.id }}" class="sub-service" style="padding: 8px; font-size: 0.8rem;">
-                        <span>{{ app.name }}</span><span class="status-running">● RUNNING</span>
-                    </div>
-                {% endfor %}
-            </div>
-            <a href="{{ immich_url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 12px;">Launch App</a>
-        </div>
-
-            {% for app in groups['Running'] %}
-            {% if "immich" not in app.name.lower() %}
-            <div class="card" id="card-{{ app.id }}">
+       <div id="running-containers" class="container-grid">
+            <div class="card" id="card-immich-group" 
+                 style="display: {% if groups['Immich']['services']|length > 0 %} block {% else %} none {% endif %};">
+                
                 <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', '{{ immich_url }}', 'immich-stack')">⋮</button>
                 <div class="title-area" style="margin-bottom: 15px;">
-                    <img src="{{ app.icon_url }}" alt="icon">
-                    <h2>{{ app.name }}</h2>
+                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
+                    <h2>Immich Photos</h2>
                 </div>
-                <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
-                <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
+                <div id="immich-sub-services" style="display: grid; gap: 8px;">
+                    {% for app in groups['Immich']['services'] %}
+                        <div id="sub-{{ app.id }}" class="sub-service" style="padding: 8px; font-size: 0.8rem;">
+                            <span>{{ app.name }}</span><span class="status-running">● RUNNING</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <a href="{{ immich_url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 12px;">Launch App</a>
             </div>
-            {% endif %}
+        
+            {% for app in groups['Running'] %}
+                {# We skip anything with 'immich' in the name because they are handled by the group card above #}
+                {% if "immich" not in app.name.lower() %}
+                <div class="card" id="card-{{ app.id }}">
+                    <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+                    <div class="title-area" style="margin-bottom: 15px;">
+                        <img src="{{ app.icon_url }}" alt="icon">
+                        <h2>{{ app.name }}</h2>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
+                    <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
+                </div>
+                {% endif %}
             {% endfor %}
         </div>
 
