@@ -257,16 +257,14 @@
         </div>
 
         <div id="running-containers" style="display: contents;">
-           <div class="card" id="card-immich-group">
-                <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
+           <div class="card" id="card-immich-group" style="display: none;"> 
+               <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
                 <div class="title-area" style="margin-bottom: 15px;">
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
-                    <h2>Immich Photo Engine</h2>
+                    <h2>Immich Photos</h2>
                 </div>
-                <div style="display: grid; gap: 8px;">
-                    <div class="sub-service" style="padding: 8px; font-size: 0.8rem;"><span>Server Core</span><span class="status-running">● RUNNING</span></div>
-                    <div class="sub-service" style="padding: 8px; font-size: 0.8rem;"><span>ML Engine</span><span class="status-running">● RUNNING</span></div>
-                </div>
+                <div id="immich-sub-services" style="display: grid; gap: 8px;">
+                    </div>
                 <a href="{{ immich_url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 12px;">Launch App</a>
             </div>
 
@@ -327,7 +325,7 @@
 
     <script>
         let currentContainerId = null;
-
+    
         function openInfoMenu(name, status, url, image, address, containerId) {
             currentContainerId = containerId;
             document.getElementById('modalTitle').innerText = name;
@@ -341,13 +339,13 @@
             document.getElementById('infoModal').style.display = 'flex';
             document.body.classList.add('modal-open');
         }
-
+    
         function closeInfoMenu() {
             document.getElementById('infoModal').style.display = 'none';
             document.body.classList.remove('modal-open');
             currentContainerId = null;
         }
-
+    
         function triggerAction(action) {
             if (!currentContainerId) return;
             fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
@@ -356,7 +354,7 @@
                     location.reload();
                 });
         }
-
+    
         let timeLeft = 5000;
         const refreshInterval = 5000;
         const timerBar = document.getElementById('timerBar');
@@ -378,6 +376,7 @@
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
+                    // --- PROXMOX UPDATES ---
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
@@ -388,57 +387,116 @@
                             if(tcpu) tcpu.innerText = vm.cpu;
                         });
                     }
-
-                   if (data.containers) {
+    
+                    // --- CONTAINER UPDATES ---
+                    if (data.containers) {
                         const runningArea = document.getElementById('running-containers');
                         const stoppedArea = document.getElementById('stopped-containers');
-        
+                        
+                        // Immich specific elements
+                        const immichGroup = document.getElementById('card-immich-group');
+                        const immichSubArea = document.getElementById('immich-sub-services');
+                        const immichNames = ['immich_server', 'immich_machine_learning', 'immich_postgres', 'immich_redis'];
+                        let immichActiveCount = 0;
+    
                         data.containers.forEach(app => {
-                            const card = document.getElementById(`card-${app.id}`);
-                            if (!card) return;
-        
                             const isRunning = app.status.toLowerCase() === 'running';
-                            const statusSpan = card.querySelector('p span'); // The "● RUNNING" text
-                            const titleText = card.querySelector('.title-area h2');
-        
-                            if (isRunning) {
-                                if (card.parentElement.id !== 'running-containers') runningArea.appendChild(card);
-                                card.style.opacity = "1";
-                                card.style.filter = "none";
-                                if (titleText) titleText.style.color = "white";
-                                
-                                // 1: Force color to Green (status-running)
-                                if (statusSpan) {
-                                    statusSpan.className = 'status-running'; 
-                                    statusSpan.innerText = '● RUNNING';
+                            const isImmichPart = immichNames.includes(app.raw_name);
+    
+                            if (isImmichPart) {
+                                if (isRunning) {
+                                    immichActiveCount++;
+                                    // 1. Add to group card if running
+                                    if (!document.getElementById(`sub-${app.id}`)) {
+                                        const subRow = document.createElement('div');
+                                        subRow.id = `sub-${app.id}`;
+                                        subRow.className = 'sub-service';
+                                        subRow.style.cssText = 'padding: 8px; font-size: 0.8rem;';
+                                        subRow.innerHTML = `<span>${app.name}</span><span class="status-running">● RUNNING</span>`;
+                                        if (immichSubArea) immichSubArea.appendChild(subRow);
+                                    }
+                                    // 2. Remove the individual "Stopped" card if it exists
+                                    const individualCard = document.getElementById(`card-${app.id}`);
+                                    if (individualCard) individualCard.remove();
+                                } else {
+                                    // 1. Remove from group card if stopped
+                                    const subRow = document.getElementById(`sub-${app.id}`);
+                                    if (subRow) subRow.remove();
+                                    // 2. Ensure individual card exists in stopped area
+                                    if (!document.getElementById(`card-${app.id}`)) {
+                                        createStoppedCard(app, stoppedArea);
+                                    }
                                 }
                             } else {
-                                if (card.parentElement.id !== 'stopped-containers') stoppedArea.appendChild(card);
-                                card.style.opacity = "0.6";
-                                card.style.filter = "grayscale(0.8)";
-                                if (titleText) titleText.style.color = "#94a3b8";
-        
-                                // 1: Force color to Red (status-exited)
-                                if (statusSpan) {
-                                    statusSpan.className = 'status-exited';
-                                    statusSpan.innerText = `● ${app.status.toUpperCase()}`;
+                                // --- STANDARD CONTAINER LOGIC ---
+                                const card = document.getElementById(`card-${app.id}`);
+                                if (!card) return;
+    
+                                const statusSpan = card.querySelector('p span');
+                                const titleText = card.querySelector('.title-area h2');
+    
+                                if (isRunning) {
+                                    if (card.parentElement.id !== 'running-containers') runningArea.appendChild(card);
+                                    card.style.opacity = "1";
+                                    card.style.filter = "none";
+                                    if (titleText) titleText.style.color = "white";
+                                    if (statusSpan) {
+                                        statusSpan.className = 'status-running'; 
+                                        statusSpan.innerText = '● RUNNING';
+                                    }
+    
+                                    // Swap Button to Link
+                                    let actionBtn = card.querySelector('.btn');
+                                    if (actionBtn && actionBtn.tagName === 'BUTTON') {
+                                        const newLink = document.createElement('a');
+                                        newLink.href = app.url;
+                                        newLink.className = "btn";
+                                        newLink.target = "_blank";
+                                        newLink.style.cssText = "width: 100%; box-sizing: border-box; margin-top: 12px;";
+                                        newLink.innerText = "Launch App";
+                                        actionBtn.replaceWith(newLink);
+                                    }
+                                } else {
+                                    if (card.parentElement.id !== 'stopped-containers') stoppedArea.appendChild(card);
+                                    card.style.opacity = "0.6";
+                                    card.style.filter = "grayscale(0.8)";
+                                    if (titleText) titleText.style.color = "#94a3b8";
+                                    if (statusSpan) {
+                                        statusSpan.className = 'status-exited';
+                                        statusSpan.innerText = `● ${app.status.toUpperCase()}`;
+                                    }
                                 }
                             }
-        
-                            // Button/Link Swap logic...
-                            let actionBtn = card.querySelector('.btn');
-                            if (isRunning && actionBtn.tagName === 'BUTTON') {
-                                const newLink = document.createElement('a');
-                                newLink.href = app.url;
-                                newLink.className = "btn";
-                                newLink.target = "_blank";
-                                newLink.style.cssText = "width: 100%; box-sizing: border-box;";
-                                newLink.innerText = "Launch App";
-                                actionBtn.replaceWith(newLink);
-                            }
                         });
+    
+                        // Manage Immich Group visibility
+                        if (immichGroup) {
+                            immichGroup.style.display = immichActiveCount > 0 ? 'block' : 'none';
+                            if (immichActiveCount > 0 && immichGroup.parentElement !== runningArea) {
+                                runningArea.prepend(immichGroup);
+                            }
+                        }
                     }
                 });
+        }
+    
+        // Function to generate a card for stopped services that aren't in the group
+        function createStoppedCard(app, container) {
+            const card = document.createElement('div');
+            card.id = `card-${app.id}`;
+            card.className = 'card';
+            card.style.opacity = "0.6";
+            card.style.filter = "grayscale(0.8)";
+            card.innerHTML = `
+                <button class="menu-btn" onclick="openInfoMenu('${app.name}', '${app.status}', '${app.url}', 'N/A', '${app.url}', '${app.id}')">⋮</button>
+                <div class="title-area">
+                    <img src="${app.icon_url}" alt="icon">
+                    <h2 style="color: #94a3b8">${app.name}</h2>
+                </div>
+                <p><span class="status-exited">● ${app.status.toUpperCase()}</span></p>
+                <button class="btn" onclick="triggerAction('start')" style="width:100%; margin-top:12px;">Start Service</button>
+            `;
+            container.appendChild(card);
         }
     </script>
 </body>
