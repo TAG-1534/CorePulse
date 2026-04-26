@@ -251,7 +251,7 @@ def index():
                            vms=vm_list,
                            nas_ip=TRUENAS_IP,
                            PROXMOX_URL=PROXMOX_URL,
-                          immich_url=immich_url)
+                           immich_url=immich_url)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
