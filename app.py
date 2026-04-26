@@ -116,28 +116,38 @@ def container_control(container_id, action):
 
 @app.route('/api/stats')
 def api_stats():
-    vm = psutil.virtual_memory()
-    
-    # Get fresh container data for the JS to move cards
-    all_containers = client.containers.list(all=True)
+    # Get fresh container data for the JS to move and create cards
+    try:
+        all_containers = client.containers.list(all=True)
+    except Exception as e:
+        print(f"Docker Error: {e}")
+        all_containers = []
+
     container_list = []
     for c in all_containers:
         raw_name = c.name.lstrip('/')
+        
+        # Look up config in PORT_MAP
         config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
+        
         url = "#"
         if config:
-            url = f"{config.get('proto', 'http')}://{PORTAINER_IP}:{config.get('port', '')}"
+            proto = config.get('proto', 'http')
+            port = config.get('port', '')
+            url = f"{proto}://{PORTAINER_IP}:{port}"
             
         container_list.append({
             "id": c.id,
-            "name": clean_name(raw_name),
+            "raw_name": raw_name,           # Needed for Immich grouping logic
+            "name": clean_name(raw_name),    # The pretty name
             "status": c.status,
-            "url": url
+            "url": url,
+            "icon_url": get_icon_url(raw_name) # Needed for dynamic card creation
         })
 
     return jsonify({
         "vms": get_proxmox_stats(),
-        "containers": container_list  # This is the "fuel" for your JavaScript
+        "containers": container_list
     })
 
 @app.route('/')
