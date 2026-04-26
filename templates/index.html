@@ -15,7 +15,6 @@
             transition: filter 0.3s ease;
         }
 
-        /* When modal is open, blur the main content */
         body.modal-open .grid, body.modal-open .header-section {
             filter: blur(8px);
             pointer-events: none;
@@ -82,7 +81,7 @@
         }
 
         .status-running, .status-online { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
-        .status-exited { color: #f87171; }
+        .status-exited, .status-stopped { color: #f87171; }
 
         .sub-service {
             background: rgba(255, 255, 255, 0.03);
@@ -114,9 +113,11 @@
             font-weight: 600;
             font-size: 0.85rem;
             transition: 0.3s;
+            cursor: pointer;
         }
 
-        .btn:hover { background: #38bdf8; color: #0f172a; }
+        .btn:hover:not(:disabled) { background: #38bdf8; color: #0f172a; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Modal Styles */
         .modal-overlay {
@@ -136,7 +137,7 @@
             border-radius: 24px;
             padding: 32px;
             width: 90%;
-            max-width: 400px;
+            max-width: 420px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
@@ -144,7 +145,12 @@
         .info-row { display: flex; justify-content: space-between; margin: 15px 0; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
         .info-row strong { color: #94a3b8; }
         .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.5; }
-        .close-modal:hover { opacity: 1; }
+        
+        .control-group {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -164,38 +170,20 @@
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
                     <h2>Infrastructure Nodes (Proxmox)</h2>
                 </div>
-                <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">
-                    ⚙️ Web GUI
-                </a>
+                <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">⚙️ Web GUI</a>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                 {% for vm in vms %}
                 <div class="sub-service" style="flex-direction: column; align-items: stretch; position: relative;">
-                    <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A')">⋮</button>
+                    <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A', null)">⋮</button>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
-                        <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">
-                            ● {{ vm.status.upper() }}
-                        </span>
+                        <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
                     </div>
-                    
                     {% if vm.status == 'running' %}
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-                        <span>CPU Usage</span>
-                        <span><span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>%</span>
-                    </div>
-                    <div class="progress-bg" style="height: 6px; margin-bottom: 12px;">
-                        <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-                        <span>Memory</span>
-                        <span><span id="text-mem-raw-{{ vm.vmid }}">{{ vm.mem_used }} / {{ vm.mem_max }}</span></span>
-                    </div>
-                    <div class="progress-bg" style="height: 6px;">
-                        <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
-                    </div>
+                    <div class="progress-bg" style="height: 6px; margin-bottom: 12px;"><div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div></div>
+                    <div class="progress-bg" style="height: 6px;"><div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div></div>
                     {% else %}
                     <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
                     {% endif %}
@@ -208,25 +196,16 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="title-area">
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
-                    <h2 style="margin-right: 10px;">TrueNAS Storage</h2>
-                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}" style="font-size: 0.9rem;">● {{ nas.status }}</span>
+                    <h2>TrueNAS Storage</h2>
+                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
                 </div>
                 <a href="http://{{ nas_ip }}" target="_blank" class="btn">⚙️ Settings</a>
             </div>
-
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                 {% for pool in nas.pools %}
-                <div class="sub-service" style="flex-direction: column; align-items: flex-start;">
-                    <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;">
-                        <strong>{{ pool.name }}</strong>
-                        <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}%</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px;">
-                        {{ pool.used_str }} / {{ pool.total_str }}
-                    </div>
-                    <div class="progress-bg">
-                        <div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div>
-                    </div>
+                <div class="sub-service" style="flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;"><strong>{{ pool.name }}</strong><span>{{ pool.raw_percent }}%</span></div>
+                    <div class="progress-bg" style="margin-top:8px;"><div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div></div>
                 </div>
                 {% endfor %}
             </div>
@@ -237,33 +216,14 @@
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        {% if groups['Immich']['services'] %}
-        <div class="card">
-            <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', 'N/A')">⋮</button>
-            <div class="title-area" style="margin-bottom: 15px;">
-                <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
-                <h2>Immich Photos</h2>
-            </div>
-            <div style="margin-bottom: 15px;">
-                {% for s in groups['Immich']['services'] %}
-                <div class="sub-service" style="padding: 6px 10px; margin-bottom: 5px; font-size: 0.8rem;">
-                    <span>{{ s.name }}</span>
-                    <span class="status-{{ s.status }}">●</span>
-                </div>
-                {% endfor %}
-            </div>
-            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Open Immich</a>
-        </div>
-        {% endif %}
-
         {% for app in groups['Apps'] %}
         <div class="card">
-            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.url }}')">⋮</button>
+            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
             <div class="title-area" style="margin-bottom: 15px;">
                 <img src="{{ app.icon_url }}" alt="icon" onerror="this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
                 <h2>{{ app.name }}</h2>
             </div>
-            <p style="font-size: 0.9rem; margin-bottom: 20px;">Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
             <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
         </div>
         {% endfor %}
@@ -278,13 +238,25 @@
             <div class="info-row"><strong>Status</strong><span id="modalStatus"></span></div>
             <div class="info-row"><strong>Address</strong><span id="modalAddress" style="color: #38bdf8;"></span></div>
             <div class="info-row"><strong>Stack / Image</strong><span id="modalImage" style="max-width: 200px; text-align: right; word-break: break-all;"></span></div>
-            <div class="info-row" style="border:none;"><strong>Region</strong><span>New Zealand</span></div>
-            <a id="modalLink" href="#" target="_blank" class="btn" style="width:100%; box-sizing: border-box; margin-top:10px;">Access Service</a>
+            
+            <div id="containerControls" class="control-group" style="display: none;">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Container Actions</p>
+                <div style="display: flex; gap: 10px;">
+                    <button id="ctrlStart" class="btn" style="flex:1; background: rgba(74, 222, 128, 0.1); color: #4ade80;" onclick="triggerAction('start')">Start</button>
+                    <button id="ctrlRestart" class="btn" style="flex:1;" onclick="triggerAction('restart')">Restart</button>
+                    <button id="ctrlStop" class="btn" style="flex:1; background: rgba(248, 113, 113, 0.1); color: #f87171;" onclick="triggerAction('stop')">Stop</button>
+                </div>
+            </div>
+
+            <a id="modalLink" href="#" target="_blank" class="btn" style="width:100%; box-sizing: border-box; margin-top:20px;">Access Service</a>
         </div>
     </div>
 
     <script>
-        function openInfoMenu(name, status, url, image, address) {
+        let currentContainerId = null;
+
+        function openInfoMenu(name, status, url, image, address, containerId) {
+            currentContainerId = containerId;
             document.getElementById('modalTitle').innerText = name;
             document.getElementById('modalStatus').innerText = status.toUpperCase();
             document.getElementById('modalStatus').className = 'status-' + status;
@@ -292,35 +264,58 @@
             document.getElementById('modalImage').innerText = image || 'N/A';
             document.getElementById('modalLink').href = url;
             document.getElementById('modalLink').style.display = (url === "#") ? 'none' : 'block';
+            
+            // Show/Hide controls based on if it's a Docker container
+            document.getElementById('containerControls').style.display = containerId ? 'block' : 'none';
+
             document.getElementById('infoModal').style.display = 'flex';
             document.body.classList.add('modal-open');
+        }
+
+        function triggerAction(action) {
+            if (!currentContainerId) return;
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "...";
+            btn.disabled = true;
+
+            fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        alert(`${action.toUpperCase()} command sent! Refreshing dashboard...`);
+                        location.reload();
+                    } else {
+                        alert("Error: " + (data.error || "Action failed"));
+                    }
+                })
+                .catch(err => alert("Communication error with server."))
+                .finally(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                });
         }
 
         function closeInfoMenu() {
             document.getElementById('infoModal').style.display = 'none';
             document.body.classList.remove('modal-open');
+            currentContainerId = null;
         }
 
         function updateStats() {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.vms) {
-                        data.vms.forEach(vm => {
-                            const cpuBar = document.getElementById(`vm-cpu-${vm.vmid}`);
-                            const memBar = document.getElementById(`vm-mem-${vm.vmid}`);
-                            const cpuText = document.getElementById(`text-cpu-${vm.vmid}`);
-                            const memRawText = document.getElementById(`text-mem-raw-${vm.vmid}`);
-                            if(cpuBar) cpuBar.style.width = vm.cpu + '%';
-                            if(memBar) memBar.style.width = vm.mem_pct + '%';
-                            if(cpuText) cpuText.innerText = vm.cpu;
-                            if(memRawText) memRawText.innerText = `${vm.mem_used} / ${vm.mem_max}`;
-                        });
-                    }
-                })
-                .catch(err => console.error("Update failed:", err));
+            fetch('/api/stats').then(r => r.json()).then(data => {
+                if (data.vms) {
+                    data.vms.forEach(vm => {
+                        const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
+                        const mb = document.getElementById(`vm-mem-${vm.vmid}`);
+                        if(cb) cb.style.width = vm.cpu + '%';
+                        if(mb) mb.style.width = vm.mem_pct + '%';
+                    });
+                }
+            });
         }
-        setInterval(updateStats, 3000);
+        setInterval(updateStats, 5000);
         window.addEventListener('keydown', (e) => { if (e.key === "Escape") closeInfoMenu(); });
     </script>
 </body>
