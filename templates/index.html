@@ -278,7 +278,7 @@
             {% for app in groups['Running'] %}
             {% if "immich" not in app.name.lower() %}
             <div class="card" id="card-{{ app.id }}">
-                <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+                <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', '{{ immich_url }}', 'immich-stack')">⋮</button>
                 <div class="title-area" style="margin-bottom: 15px;">
                     <img src="{{ app.icon_url }}" alt="icon">
                     <h2>{{ app.name }}</h2>
