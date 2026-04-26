@@ -193,21 +193,31 @@ def index():
         try:
             r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3, verify=False)
             if r.status_code == 200:
-                nas_stats["status"] = "Online"
-                for p in r.json():
-                    topology = p.get('topology', {})
-                    data_vdevs = topology.get('data', [])
-                    total_raw = sum(v.get('stats', {}).get('size', 0) for v in data_vdevs)
-                    alloc_raw = sum(v.get('stats', {}).get('allocated', 0) for v in data_vdevs)
-                    percent = round((alloc_raw / total_raw) * 100, 1) if total_raw > 0 else 0
-                    nas_stats["pools"].append({
-                        "name": p['name'], "status": p['status'],
-                        "used_str": format_bytes(alloc_raw),
-                        "total_str": format_bytes(total_raw),
-                        "raw_percent": percent
-                    })
-        except Exception as e:
-            print(f"TrueNAS Error: {e}")
+               nas_stats = {"status": "Disconnected", "pools": []}
+                if TRUENAS_IP and TRUENAS_API_KEY:
+                    headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
+                    try:
+                        # Using the v2.0 pool endpoint
+                        r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3, verify=False)
+                        if r.status_code == 200:
+                            nas_stats["status"] = "Online"
+                            for p in r.json():
+                                # Extract usage stats provided by TrueNAS API
+                                usage = p.get('usage', {})
+                                used_bytes = usage.get('used', 0)
+                                total_bytes = usage.get('total', 1) # Avoid div by zero
+                                
+                                percent = round((used_bytes / total_bytes) * 100, 1)
+                                
+                                nas_stats["pools"].append({
+                                    "name": p['name'],
+                                    "status": p.get('status', 'HEALTHY'),
+                                    "used_str": format_bytes(used_bytes),
+                                    "total_str": format_bytes(total_bytes),
+                                    "raw_percent": percent
+                                })
+                    except Exception as e:
+                        print(f"TrueNAS Error: {e}")
 
     return render_template('index.html', 
                            groups=groups, 
