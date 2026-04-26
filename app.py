@@ -145,13 +145,11 @@ def index():
 
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
-    # Initialize groups
     groups = {
         "Immich": {"services": [], "status": "exited", "url": "", "name": "Immich Photos", "icon_url": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png"}, 
         "Apps": []
     }
     
-    # Set Immich URL from Port Map
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
     groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
 
@@ -178,7 +176,6 @@ def index():
             "address": url
         }
 
-        # Check if container belongs to Immich
         if "immich" in raw_name.lower():
             groups["Immich"]["services"].append(container_data)
             if c.status == "running":
@@ -193,31 +190,22 @@ def index():
         try:
             r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3, verify=False)
             if r.status_code == 200:
-               nas_stats = {"status": "Disconnected", "pools": []}
-                if TRUENAS_IP and TRUENAS_API_KEY:
-                    headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
-                    try:
-                        # Using the v2.0 pool endpoint
-                        r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3, verify=False)
-                        if r.status_code == 200:
-                            nas_stats["status"] = "Online"
-                            for p in r.json():
-                                # Extract usage stats provided by TrueNAS API
-                                usage = p.get('usage', {})
-                                used_bytes = usage.get('used', 0)
-                                total_bytes = usage.get('total', 1) # Avoid div by zero
-                                
-                                percent = round((used_bytes / total_bytes) * 100, 1)
-                                
-                                nas_stats["pools"].append({
-                                    "name": p['name'],
-                                    "status": p.get('status', 'HEALTHY'),
-                                    "used_str": format_bytes(used_bytes),
-                                    "total_str": format_bytes(total_bytes),
-                                    "raw_percent": percent
-                                })
-                    except Exception as e:
-                        print(f"TrueNAS Error: {e}")
+                nas_stats["status"] = "Online"
+                for p in r.json():
+                    usage = p.get('usage', {})
+                    used_bytes = usage.get('used', 0)
+                    total_bytes = usage.get('total', 1)
+                    percent = round((used_bytes / total_bytes) * 100, 1)
+                    
+                    nas_stats["pools"].append({
+                        "name": p['name'],
+                        "status": p.get('status', 'HEALTHY'),
+                        "used_str": format_bytes(used_bytes),
+                        "total_str": format_bytes(total_bytes),
+                        "raw_percent": percent
+                    })
+        except Exception as e:
+            print(f"TrueNAS Error: {e}")
 
     return render_template('index.html', 
                            groups=groups, 
