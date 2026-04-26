@@ -180,7 +180,8 @@ def index():
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
     immich_url = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
     groups["Immich"]["url"] = immich_url
-
+   immich_names = ['immich_server', 'immich_machine_learning', 'immich_postgres', 'immich_redis']
+    
     for c in all_containers:
         raw_name = c.name.lstrip('/')
         display_name = clean_name(raw_name)
@@ -204,10 +205,20 @@ def index():
             "address": url
         }
 
-        if c.status == "running":
-            groups["Running"].append(container_data)
+        # SORTING LOGIC
+        if raw_name in immich_names:
+            if c.status == "running":
+                # Put in Immich group if running
+                groups["Immich"]["services"].append(container_data)
+            else:
+                # If stopped, show as an individual card so user can "Start" it
+                groups["Stopped"].append(container_data)
         else:
-            groups["Stopped"].append(container_data)
+            # Standard container handling
+            if c.status == "running":
+                groups["Running"].append(container_data)
+            else:
+                groups["Stopped"].append(container_data)
 
     # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
