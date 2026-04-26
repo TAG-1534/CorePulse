@@ -452,60 +452,47 @@
                         const stoppedHeading = document.getElementById('stopped-heading');
         
                         data.containers.forEach(app => {
-                            let card = document.getElementById(`card-${app.id}`);
-                            
-                            // IF CARD DISAPPEARED: Force a reload to get the template back
-                            if (!card) {
-                                console.warn(`Card for ${app.name} missing. Reloading...`);
-                                location.reload(); 
-                                return;
-                            }
-        
+                            const card = document.getElementById(`card-${app.id}`);
+                            if (!card) return;
+                        
                             const isRunning = app.status.toLowerCase() === 'running';
                             const statusText = card.querySelector('p span');
-                            const actionBtn = card.querySelector('.btn:last-child');
-        
-                            if (isRunning) {
-                                if (card.parentElement.id !== 'running-containers') {
-                                    runningArea.appendChild(card);
-                                }
-                                card.style.opacity = "1";
-                                card.style.filter = "none";
-                                if(statusText) {
-                                    statusText.className = 'status-running';
-                                    statusText.innerText = '● RUNNING';
-                                }
-                                
-                                // Fix Button: Turn "Offline" button into "Launch" link
-                                if (actionBtn && actionBtn.tagName === 'BUTTON') {
-                                    const newLink = document.createElement('a');
-                                    newLink.href = app.url;
-                                    newLink.target = "_blank";
-                                    newLink.className = "btn";
-                                    newLink.style.cssText = "width: 100%; box-sizing: border-box;";
-                                    newLink.innerText = "Launch App";
-                                    actionBtn.replaceWith(newLink);
-                                }
-                            } else {
-                                if (card.parentElement.id !== 'stopped-containers') {
-                                    stoppedArea.appendChild(card);
-                                }
-                                card.style.opacity = "0.6";
-                                card.style.filter = "grayscale(0.8)";
-                                if(statusText) {
-                                    statusText.className = 'status-exited';
-                                    statusText.innerText = `● ${app.status.toUpperCase()}`;
-                                }
-        
-                                // Fix Button: Turn "Launch" link into "Offline" button
-                                if (actionBtn && actionBtn.tagName === 'A') {
-                                    const newBtn = document.createElement('button');
-                                    newBtn.className = "btn";
-                                    newBtn.disabled = true;
-                                    newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
-                                    newBtn.innerText = "Offline";
-                                    actionBtn.replaceWith(newBtn);
-                                }
+                            const runningArea = document.getElementById('running-containers');
+                            const stoppedArea = document.getElementById('stopped-containers');
+                        
+                            // 1. Handle Positioning
+                            if (isRunning && card.parentElement.id !== 'running-containers') {
+                                runningArea.appendChild(card);
+                            } else if (!isRunning && card.parentElement.id !== 'stopped-containers') {
+                                stoppedArea.appendChild(card);
+                            }
+                        
+                            // 2. Handle Visuals
+                            card.style.opacity = isRunning ? "1" : "0.6";
+                            card.style.filter = isRunning ? "none" : "grayscale(0.8)";
+                            
+                            if (statusText) {
+                                statusText.className = isRunning ? 'status-running' : 'status-exited';
+                                statusText.innerText = isRunning ? '● RUNNING' : `● ${app.status.toUpperCase()}`;
+                            }
+                        
+                            // 3. Handle the Button/Link swap
+                            let actionBtn = card.querySelector('.btn');
+                            if (isRunning && actionBtn.tagName === 'BUTTON') {
+                                const newLink = document.createElement('a');
+                                newLink.href = app.url;
+                                newLink.target = "_blank";
+                                newLink.className = "btn";
+                                newLink.style.cssText = "width: 100%; box-sizing: border-box;";
+                                newLink.innerText = "Launch App";
+                                actionBtn.replaceWith(newLink);
+                            } else if (!isRunning && actionBtn.tagName === 'A') {
+                                const newBtn = document.createElement('button');
+                                newBtn.className = "btn";
+                                newBtn.disabled = true;
+                                newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
+                                newBtn.innerText = "Offline";
+                                actionBtn.replaceWith(newBtn);
                             }
                         });
         
