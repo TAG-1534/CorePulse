@@ -27,6 +27,7 @@
             gap: 25px;
         }
 
+        /* Container Sections */
         #running-containers, #stopped-containers {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -44,6 +45,16 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             transition: transform 0.2s ease, opacity 0.3s ease;
             position: relative;
+        }
+
+        /* Title Logic: Color/Opacity change when card is in Stopped section */
+        .card.is-stopped {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+        }
+        .card.is-stopped .title-area h2 {
+            color: #94a3b8; /* Muted gray */
+            opacity: 0.6;
         }
 
         .card:hover {
@@ -73,12 +84,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            transition: opacity 0.3s ease;
         }
-
-        /* Logic for title color/opacity change */
-        .card.is-stopped .title-area h2 { color: #94a3b8; opacity: 0.7; }
-        .card.is-stopped .title-area img { filter: grayscale(1); opacity: 0.6; }
 
         .title-area img {
             width: 32px;
@@ -96,7 +102,7 @@
         }
 
         .status-running, .status-online { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
-        .status-exited, .status-stopped, .status-offline { color: #f87171; }
+        .status-exited, .status-stopped { color: #f87171; }
 
         .sub-service {
             background: rgba(255, 255, 255, 0.03);
@@ -104,7 +110,7 @@
             border-radius: 8px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
             margin-bottom: 8px;
         }
@@ -135,6 +141,7 @@
         .btn:hover:not(:disabled) { background: #38bdf8; color: #0f172a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* Modal Styling */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -193,10 +200,7 @@
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
                     <h2>Infrastructure Nodes</h2>
                     <div class="refresh-timer">
-                        <svg>
-                            <circle class="track" cx="10" cy="10" r="8"></circle>
-                            <circle id="timerBar" class="bar" cx="10" cy="10" r="8"></circle>
-                        </svg>
+                        <svg><circle class="track" cx="10" cy="10" r="8"></circle><circle id="timerBar" class="bar" cx="10" cy="10" r="8"></circle></svg>
                     </div>
                 </div>
                 <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">⚙️ Web GUI</a>
@@ -233,23 +237,22 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="title-area">
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
-                    <h2>Storage Arrays (TrueNAS)</h2>
+                    <h2>TrueNAS SCALE Storage</h2>
                 </div>
+                <a href="{{ TRUENAS_URL }}" target="_blank" class="btn">📊 Storage Manager</a>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                 {% for pool in pools %}
                 <div class="sub-service" style="flex-direction: column;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <strong>{{ pool.name }}</strong>
+                        <strong>Pool: {{ pool.name }}</strong>
                         <span class="status-online">● {{ pool.status }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
                         <span>Usage: {{ pool.used_pct }}%</span>
                         <span>{{ pool.used_gb }} / {{ pool.total_gb }} GB</span>
                     </div>
-                    <div class="progress-bg">
-                        <div style="width: {{ pool.used_pct }}%; background: #38bdf8; height: 100%;"></div>
-                    </div>
+                    <div class="progress-bg"><div style="width: {{ pool.used_pct }}%; background: #38bdf8; height: 100%;"></div></div>
                 </div>
                 {% endfor %}
             </div>
@@ -261,34 +264,38 @@
         </div>
 
         <div id="running-containers">
+            <div class="card" id="card-immich-group">
+                <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
+                    <h2>Immich Photo Engine</h2>
+                </div>
+                <div style="display: grid; gap: 8px;">
+                    <div class="sub-service" style="background: rgba(255,255,255,0.02); padding: 8px; font-size: 0.8rem;">
+                        <span>Server Core</span><span class="status-running">● RUNNING</span>
+                    </div>
+                    <div class="sub-service" style="background: rgba(255,255,255,0.02); padding: 8px; font-size: 0.8rem;">
+                        <span>ML Engine</span><span class="status-running">● RUNNING</span>
+                    </div>
+                    <div class="sub-service" style="background: rgba(255,255,255,0.02); padding: 8px; font-size: 0.8rem;">
+                        <span>Microservices</span><span class="status-running">● RUNNING</span>
+                    </div>
+                </div>
+                <a href="{{ immich_url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 12px;">Launch Immich</a>
+            </div>
+
             {% for app in groups['Running'] %}
-                {% if app.name.lower() == 'immich' %}
-                <div class="card" id="card-{{ app.id }}">
-                    <div class="title-area" style="margin-bottom: 15px;">
-                        <img src="{{ app.icon_url }}" alt="icon">
-                        <h2>Immich Stack</h2>
-                    </div>
-                    <div class="sub-services-list">
-                        {% for sub in app.sub_services %}
-                        <div class="sub-service" style="margin-bottom: 5px; padding: 8px;">
-                            <span>{{ sub.name }}</span>
-                            <span class="status-{{ sub.status.lower() }}">● {{ sub.status }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 10px;">Launch Immich</a>
+            {% if "immich" not in app.name.lower() %}
+            <div class="card" id="card-{{ app.id }}">
+                <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="{{ app.icon_url }}" alt="icon">
+                    <h2>{{ app.name }}</h2>
                 </div>
-                {% else %}
-                <div class="card" id="card-{{ app.id }}">
-                    <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
-                    <div class="title-area" style="margin-bottom: 15px;">
-                        <img src="{{ app.icon_url }}" alt="icon">
-                        <h2>{{ app.name }}</h2>
-                    </div>
-                    <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
-                    <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
-                </div>
-                {% endif %}
+                <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
+                <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
 
@@ -298,45 +305,162 @@
         </div>
 
         <div id="stopped-containers">
+            {% for app in groups['Stopped'] %}
+            <div class="card is-stopped" id="card-{{ app.id }}">
+                <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="{{ app.icon_url }}" alt="icon">
+                    <h2>{{ app.name }}</h2>
+                </div>
+                <p style="font-size: 0.9rem; color: #f87171;">Status: <span class="status-exited">● {{ app.status.upper() }}</span></p>
+                <button class="btn" disabled style="width: 100%; box-sizing: border-box;">Offline</button>
             </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="modalTitle" style="margin: 0;">Service Info</h2>
+                <button onclick="closeInfoMenu()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px; font-size: 0.95rem;">
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <strong>Status</strong><span id="modalStatus"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <strong>Address</strong><span id="modalAddress" style="color: #38bdf8;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <strong>Image</strong><span id="modalImage" style="max-width: 200px; text-align: right; word-break: break-all; font-size: 0.8rem; color: #94a3b8;"></span>
+                </div>
+            </div>
+            <div id="containerControls" style="display: none; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 10px; padding-top: 20px;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" style="flex:1; background: rgba(74, 222, 128, 0.1); color: #4ade80; border-color: rgba(74, 222, 128, 0.2);" onclick="triggerAction('start')">Start</button>
+                    <button class="btn" style="flex:1; background: rgba(248, 113, 113, 0.1); color: #f87171; border-color: rgba(248, 113, 113, 0.2);" onclick="triggerAction('stop')">Stop</button>
+                </div>
+            </div>
+            <a id="modalLink" href="#" target="_blank" class="btn" style="width:100%; box-sizing: border-box; margin-top:20px;">Access Service</a>
+        </div>
     </div>
 
     <script>
-        // ... (runTimer and Modal functions same as previous) ...
+        let currentContainerId = null;
+        let timeLeft = 5000;
+        const refreshInterval = 5000;
+        const timerBar = document.getElementById('timerBar');
+        const circumference = 50.24;
+
+        function openInfoMenu(name, status, url, image, address, containerId) {
+            currentContainerId = containerId;
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalStatus').innerText = status.toUpperCase();
+            document.getElementById('modalStatus').className = 'status-' + status;
+            document.getElementById('modalAddress').innerText = address || url;
+            document.getElementById('modalImage').innerText = image || 'N/A';
+            document.getElementById('modalLink').href = url;
+            document.getElementById('modalLink').style.display = (url === "#" || !url) ? 'none' : 'block';
+            document.getElementById('containerControls').style.display = containerId ? 'block' : 'none';
+            document.getElementById('infoModal').style.display = 'flex';
+            document.body.classList.add('modal-open');
+        }
+
+        function closeInfoMenu() {
+            document.getElementById('infoModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+
+        function triggerAction(action) {
+            if (!currentContainerId) return;
+            fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    console.log(`${action} triggered for ${currentContainerId}`);
+                    updateStats();
+                    closeInfoMenu();
+                });
+        }
+
+        function runTimer() {
+            timeLeft -= 100;
+            if (timeLeft <= 0) {
+                timeLeft = refreshInterval;
+                updateStats();
+            }
+            const progress = timeLeft / refreshInterval;
+            const offset = circumference - (progress * circumference);
+            if (timerBar) timerBar.style.strokeDashoffset = offset;
+        }
+        setInterval(runTimer, 100);
 
         function updateStats() {
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
-                    // Update VMs and Pools logic...
-                    
-                    const runningArea = document.getElementById('running-containers');
-                    const stoppedArea = document.getElementById('stopped-containers');
-                    const stoppedHeading = document.getElementById('stopped-heading');
+                    // VM Updates
+                    if (data.vms) {
+                        data.vms.forEach(vm => {
+                            const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
+                            const mb = document.getElementById(`vm-mem-${vm.vmid}`);
+                            if(cb) cb.style.width = vm.cpu + '%';
+                            if(mb) mb.style.width = vm.mem_pct + '%';
+                            const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
+                            if(tcpu) tcpu.innerText = vm.cpu;
+                        });
+                    }
 
-                    data.containers.forEach(app => {
-                        const card = document.getElementById(`card-${app.id}`);
-                        if (!card) return;
+                    // Container Updates
+                    if (data.containers) {
+                        const runningArea = document.getElementById('running-containers');
+                        const stoppedArea = document.getElementById('stopped-containers');
+                        const stoppedHeading = document.getElementById('stopped-heading');
 
-                        const isRunning = app.status.toLowerCase() === 'running';
-                        
-                        if (isRunning && card.parentElement !== runningArea) {
-                            runningArea.appendChild(card);
-                            card.classList.remove('is-stopped');
-                        } else if (!isRunning && card.parentElement !== stoppedArea) {
-                            stoppedArea.appendChild(card);
-                            card.classList.add('is-stopped'); // Triggers the CSS color change
-                        }
+                        data.containers.forEach(app => {
+                            const card = document.getElementById(`card-${app.id}`);
+                            if (!card) return;
 
-                        // Style updates
-                        card.style.opacity = isRunning ? "1" : "0.6";
-                        card.style.filter = isRunning ? "none" : "grayscale(0.8)";
-                    });
+                            const isRunning = app.status.toLowerCase() === 'running';
+                            
+                            // Move Card logic
+                            if (isRunning) {
+                                if (card.parentElement !== runningArea) runningArea.appendChild(card);
+                                card.classList.remove('is-stopped');
+                            } else {
+                                if (card.parentElement !== stoppedArea) stoppedArea.appendChild(card);
+                                card.classList.add('is-stopped');
+                            }
 
-                    stoppedHeading.style.display = (stoppedArea.children.length > 0) ? 'flex' : 'none';
+                            // Update text and buttons
+                            const statusSpan = card.querySelector('p span');
+                            if (statusSpan) {
+                                statusSpan.className = isRunning ? 'status-running' : 'status-exited';
+                                statusSpan.innerText = isRunning ? '● RUNNING' : `● ${app.status.toUpperCase()}`;
+                            }
+
+                            let actionBtn = card.querySelector('.btn');
+                            if (isRunning && actionBtn.tagName === 'BUTTON') {
+                                const a = document.createElement('a');
+                                a.href = app.url; a.target = "_blank"; a.className = "btn";
+                                a.style.cssText = "width: 100%; box-sizing: border-box;";
+                                a.innerText = "Launch App";
+                                actionBtn.replaceWith(a);
+                            } else if (!isRunning && actionBtn.tagName === 'A') {
+                                const b = document.createElement('button');
+                                b.className = "btn"; b.disabled = true;
+                                b.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #64748b;";
+                                b.innerText = "Offline";
+                                actionBtn.replaceWith(b);
+                            }
+                        });
+
+                        stoppedHeading.style.display = (stoppedArea.children.length > 0) ? 'flex' : 'none';
+                    }
                 });
         }
-        setInterval(runTimer, 100);
+
+        window.addEventListener('keydown', (e) => { if (e.key === "Escape") closeInfoMenu(); });
     </script>
 </body>
 </html>
