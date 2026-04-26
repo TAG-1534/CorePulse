@@ -168,7 +168,8 @@ def index():
     }
     
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
-    groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
+    immich_url = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
+    groups["Immich"]["url"] = immich_url
 
     for c in all_containers:
         raw_name = c.name.lstrip('/')
@@ -239,7 +240,8 @@ def index():
                            system=system_stats, 
                            vms=vm_list,
                            nas_ip=TRUENAS_IP,
-                           PROXMOX_URL=PROXMOX_URL)
+                           PROXMOX_URL=PROXMOX_URL,
+                          immich_url=immich_url)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
