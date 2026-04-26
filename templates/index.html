@@ -425,12 +425,10 @@
         setInterval(runTimer, 100);
         
         function updateStats() {
-            // Show a little flash or glow on the circle when fetching
-            // if (timerBar) timerBar.style.filter = "brightness(1.5) drop-shadow(0 0 5px #a855f7)";
-            
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
+                    // 1. Proxmox Updates
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
@@ -446,7 +444,60 @@
                             if(tmemTotal) tmemTotal.innerText = vm.mem_max;
                         });
                     }
-                    // Reset glow after fetch
+
+                    // 2. Container Position & Status Updates
+                    if (data.containers) {
+                        const runningArea = document.getElementById('running-containers');
+                        const stoppedArea = document.getElementById('stopped-containers');
+                        const stoppedHeading = document.getElementById('stopped-heading');
+
+                        data.containers.forEach(app => {
+                            const card = document.getElementById(`card-${app.id}`);
+                            if (!card) return;
+
+                            const isRunning = app.status.toLowerCase() === 'running';
+                            const statusText = card.querySelector('p span');
+                            const actionBtn = card.querySelector('a.btn, button.btn');
+
+                            if (isRunning) {
+                                // Move to running if it's currently in stopped
+                                if (card.parentElement.id !== 'running-containers') {
+                                    runningArea.appendChild(card);
+                                }
+                                card.style.opacity = "1";
+                                card.style.filter = "none";
+                                if(statusText) {
+                                    statusText.className = 'status-running';
+                                    statusText.innerText = '● RUNNING';
+                                }
+                                // Transform "Offline" button back to Link if needed
+                                if (actionBtn && actionBtn.tagName === 'BUTTON') {
+                                    const newLink = document.createElement('a');
+                                    newLink.href = app.url;
+                                    newLink.target = "_blank";
+                                    newLink.className = "btn";
+                                    newLink.style.cssText = "width: 100%; box-sizing: border-box;";
+                                    newLink.innerText = "Launch App";
+                                    actionBtn.replaceWith(newLink);
+                                }
+                            } else {
+                                // Move to stopped if it's currently in running
+                                if (card.parentElement.id !== 'stopped-containers') {
+                                    stoppedArea.appendChild(card);
+                                }
+                                card.style.opacity = "0.6";
+                                card.style.filter = "grayscale(0.8)";
+                                if(statusText) {
+                                    statusText.className = 'status-exited';
+                                    statusText.innerText = `● ${app.status.toUpperCase()}`;
+                                }
+                            }
+                        });
+
+                        // Show/Hide "Stopped" heading based on if cards exist there
+                        stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
+                    }
+
                     setTimeout(() => {
                         if (timerBar) timerBar.style.filter = "drop-shadow(0 0 3px rgba(168, 85, 247, 0.5))";
                     }, 500);
