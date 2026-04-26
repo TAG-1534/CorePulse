@@ -182,16 +182,10 @@ def index():
             "address": url
         }
 
-        # NEW: Check for Immich first, then sort the rest into Running/Stopped
-        if "immich" in raw_name.lower():
-            groups["Immich"]["services"].append(container_data)
-            if c.status == "running":
-                groups["Immich"]["status"] = "running"
+        if c.status == "running":
+            groups["Running"].append(container_data)
         else:
-            if c.status == "running":
-                groups["Running"].append(container_data)
-            else:
-                groups["Stopped"].append(container_data)
+            groups["Stopped"].append(container_data)
 
     # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
