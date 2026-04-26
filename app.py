@@ -145,9 +145,15 @@ def index():
 
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
+    
+    # NEW: Sort alphabetically by container name
+    all_containers.sort(key=lambda c: c.name.lstrip('/').lower())
+
+    # NEW: Replaced "Apps" with "Running" and "Stopped" lists
     groups = {
         "Immich": {"services": [], "status": "exited", "url": "", "name": "Immich Photos", "icon_url": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png"}, 
-        "Apps": []
+        "Running": [],
+        "Stopped": []
     }
     
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
@@ -176,12 +182,16 @@ def index():
             "address": url
         }
 
+        # NEW: Check for Immich first, then sort the rest into Running/Stopped
         if "immich" in raw_name.lower():
             groups["Immich"]["services"].append(container_data)
             if c.status == "running":
                 groups["Immich"]["status"] = "running"
         else:
-            groups["Apps"].append(container_data)
+            if c.status == "running":
+                groups["Running"].append(container_data)
+            else:
+                groups["Stopped"].append(container_data)
 
     # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
