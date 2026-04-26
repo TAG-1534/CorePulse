@@ -182,8 +182,16 @@
                         <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
                     </div>
                     {% if vm.status == 'running' %}
-                    <div class="progress-bg" style="height: 6px; margin-bottom: 12px;"><div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div></div>
-                    <div class="progress-bg" style="height: 6px;"><div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
+                        <span>CPU: <span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>%</span>
+                        <span>RAM: <span id="text-mem-raw-{{ vm.vmid }}">{{ vm.mem_used }}</span> / {{ vm.mem_max }}</span>
+                    </div>
+                    <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
+                        <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
+                    </div>
+                    <div class="progress-bg" style="height: 6px;">
+                        <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
+                    </div>
                     {% else %}
                     <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
                     {% endif %}
@@ -197,15 +205,21 @@
                 <div class="title-area">
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
                     <h2>TrueNAS Storage</h2>
-                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}">● {{ nas.status }}</span>
+                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}" style="font-size: 0.9rem; margin-left: 10px;">● {{ nas.status }}</span>
                 </div>
                 <a href="http://{{ nas_ip }}" target="_blank" class="btn">⚙️ Settings</a>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
                 {% for pool in nas.pools %}
                 <div class="sub-service" style="flex-direction: column;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;"><strong>{{ pool.name }}</strong><span>{{ pool.raw_percent }}%</span></div>
-                    <div class="progress-bg" style="margin-top:8px;"><div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div></div>
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <strong>{{ pool.name }}</strong>
+                        <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}%</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 8px 0;">
+                        {{ pool.used_str }} used of {{ pool.total_str }}
+                    </div>
+                    <div class="progress-bg"><div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div></div>
                 </div>
                 {% endfor %}
             </div>
@@ -216,65 +230,37 @@
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        {% for vm in vms %}
-        <div class="sub-service" style="flex-direction: column; align-items: stretch; position: relative;">
-            <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A', null)">⋮</button>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
-                <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
+        {% if groups['Immich']['services'] %}
+        <div class="card">
+            <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', '{{ groups['Immich']['url'] }}', '{{ groups['Immich']['services'][0]['id'] }}')">⋮</button>
+            <div class="title-area" style="margin-bottom: 15px;">
+                <img src="{{ groups['Immich']['icon_url'] }}" alt="icon">
+                <h2>Immich Photos</h2>
             </div>
-            
-            {% if vm.status == 'running' %}
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
-                <span>CPU: <span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>%</span>
-                <span>RAM: <span id="text-mem-raw-{{ vm.vmid }}">{{ vm.mem_used }}</span></span>
+            <div style="margin-bottom: 15px;">
+                {% for s in groups['Immich']['services'] %}
+                <div class="sub-service" style="padding: 6px 10px; margin-bottom: 5px; font-size: 0.8rem;">
+                    <span>{{ s.name }}</span>
+                    <span class="status-{{ s.status }}">●</span>
+                </div>
+                {% endfor %}
             </div>
-            <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
-                <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
+            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Open Immich</a>
+        </div>
+        {% endif %}
+
+        {% for app in groups['Apps'] %}
+        <div class="card">
+            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+            <div class="title-area" style="margin-bottom: 15px;">
+                <img src="{{ app.icon_url }}" alt="icon">
+                <h2>{{ app.name }}</h2>
             </div>
-            <div class="progress-bg" style="height: 6px;">
-                <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
-            </div>
-            {% else %}
-            <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
-            {% endif %}
+            <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+            <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
         </div>
         {% endfor %}
-        
-        <div class="grid">
-            {% if groups['Immich']['services'] %}
-            <div class="card">
-                <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', '{{ groups['Immich']['url'] }}', '{{ groups['Immich']['services'][0]['id'] }}')">⋮</button>
-                <div class="title-area" style="margin-bottom: 15px;">
-                    <img src="{{ groups['Immich']['icon_url'] }}" alt="icon">
-                    <h2>Immich Photos</h2>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    {% for s in groups['Immich']['services'] %}
-                    <div class="sub-service" style="padding: 6px 10px; margin-bottom: 5px; font-size: 0.8rem;">
-                        <span>{{ s.name }}</span>
-                        <span class="status-{{ s.status }}">●</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Open Immich</a>
-            </div>
-            {% endif %}
-        
-            {% for app in groups['Apps'] %}
-            <div class="card">
-                <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
-                <div class="title-area" style="margin-bottom: 15px;">
-                    <img src="{{ app.icon_url }}" alt="icon">
-                    <h2>{{ app.name }}</h2>
-                </div>
-                <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
-                <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
-            </div>
-            {% endfor %}
-        </div>
-
-    <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
+    </div> <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2 id="modalTitle">Service Info</h2>
@@ -309,17 +295,13 @@
             document.getElementById('modalImage').innerText = image || 'N/A';
             document.getElementById('modalLink').href = url;
             document.getElementById('modalLink').style.display = (url === "#") ? 'none' : 'block';
-            
-            // Show/Hide controls based on if it's a Docker container
             document.getElementById('containerControls').style.display = containerId ? 'block' : 'none';
-
             document.getElementById('infoModal').style.display = 'flex';
             document.body.classList.add('modal-open');
         }
 
         function triggerAction(action) {
             if (!currentContainerId) return;
-            
             const btn = event.target;
             const originalText = btn.innerText;
             btn.innerText = "...";
@@ -354,8 +336,12 @@
                     data.vms.forEach(vm => {
                         const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
                         const mb = document.getElementById(`vm-mem-${vm.vmid}`);
+                        const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
+                        const tmem = document.getElementById(`text-mem-raw-${vm.vmid}`);
                         if(cb) cb.style.width = vm.cpu + '%';
                         if(mb) mb.style.width = vm.mem_pct + '%';
+                        if(tcpu) tcpu.innerText = vm.cpu;
+                        if(tmem) tmem.innerText = vm.mem_used;
                     });
                 }
             });
