@@ -293,8 +293,8 @@
                 {% endfor %}
             </div>
         </div>
-<div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 20px 0 5px 0;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Containerized Services</h2>
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 20px 0 5px 0;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Active Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
@@ -313,7 +313,7 @@
         </div>
 
         <div id="stopped-heading" style="grid-column: 1 / -1; {{ 'display: flex;' if groups['Stopped'] else 'display: none;' }} align-items: center; margin: 30px 0 5px 0;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: #94a3b8; font-weight: 600;">Stopped / Inactive</h2>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Stopped / Inactive Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.1); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
@@ -428,7 +428,7 @@
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
-                    // 1. Proxmox Updates
+                    // 1. Proxmox Updates (Keep as is)
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
@@ -444,23 +444,28 @@
                             if(tmemTotal) tmemTotal.innerText = vm.mem_max;
                         });
                     }
-
+        
                     // 2. Container Position & Status Updates
                     if (data.containers) {
                         const runningArea = document.getElementById('running-containers');
                         const stoppedArea = document.getElementById('stopped-containers');
                         const stoppedHeading = document.getElementById('stopped-heading');
-
+        
                         data.containers.forEach(app => {
-                            const card = document.getElementById(`card-${app.id}`);
-                            if (!card) return;
-
+                            let card = document.getElementById(`card-${app.id}`);
+                            
+                            // IF CARD DISAPPEARED: Force a reload to get the template back
+                            if (!card) {
+                                console.warn(`Card for ${app.name} missing. Reloading...`);
+                                location.reload(); 
+                                return;
+                            }
+        
                             const isRunning = app.status.toLowerCase() === 'running';
                             const statusText = card.querySelector('p span');
-                            const actionBtn = card.querySelector('a.btn, button.btn');
-
+                            const actionBtn = card.querySelector('.btn:last-child');
+        
                             if (isRunning) {
-                                // Move to running if it's currently in stopped
                                 if (card.parentElement.id !== 'running-containers') {
                                     runningArea.appendChild(card);
                                 }
@@ -470,7 +475,8 @@
                                     statusText.className = 'status-running';
                                     statusText.innerText = '● RUNNING';
                                 }
-                                // Transform "Offline" button back to Link if needed
+                                
+                                // Fix Button: Turn "Offline" button into "Launch" link
                                 if (actionBtn && actionBtn.tagName === 'BUTTON') {
                                     const newLink = document.createElement('a');
                                     newLink.href = app.url;
@@ -481,7 +487,6 @@
                                     actionBtn.replaceWith(newLink);
                                 }
                             } else {
-                                // Move to stopped if it's currently in running
                                 if (card.parentElement.id !== 'stopped-containers') {
                                     stoppedArea.appendChild(card);
                                 }
@@ -491,16 +496,21 @@
                                     statusText.className = 'status-exited';
                                     statusText.innerText = `● ${app.status.toUpperCase()}`;
                                 }
+        
+                                // Fix Button: Turn "Launch" link into "Offline" button
+                                if (actionBtn && actionBtn.tagName === 'A') {
+                                    const newBtn = document.createElement('button');
+                                    newBtn.className = "btn";
+                                    newBtn.disabled = true;
+                                    newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
+                                    newBtn.innerText = "Offline";
+                                    actionBtn.replaceWith(newBtn);
+                                }
                             }
                         });
-
-                        // Show/Hide "Stopped" heading based on if cards exist there
+        
                         stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
                     }
-
-                    setTimeout(() => {
-                        if (timerBar) timerBar.style.filter = "drop-shadow(0 0 3px rgba(168, 85, 247, 0.5))";
-                    }, 500);
                 });
         }
         window.addEventListener('keydown', (e) => { if (e.key === "Escape") closeInfoMenu(); });
