@@ -216,18 +216,63 @@
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        {% for app in groups['Apps'] %}
-        <div class="card">
-            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
-            <div class="title-area" style="margin-bottom: 15px;">
-                <img src="{{ app.icon_url }}" alt="icon" onerror="this.src='https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/docker.png';">
-                <h2>{{ app.name }}</h2>
+        {% for vm in vms %}
+        <div class="sub-service" style="flex-direction: column; align-items: stretch; position: relative;">
+            <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A', null)">⋮</button>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
+                <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
             </div>
-            <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
-            <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
+            
+            {% if vm.status == 'running' %}
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
+                <span>CPU: <span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>%</span>
+                <span>RAM: <span id="text-mem-raw-{{ vm.vmid }}">{{ vm.mem_used }}</span></span>
+            </div>
+            <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
+                <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
+            </div>
+            <div class="progress-bg" style="height: 6px;">
+                <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
+            </div>
+            {% else %}
+            <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
+            {% endif %}
         </div>
         {% endfor %}
-    </div>
+        
+        <div class="grid">
+            {% if groups['Immich']['services'] %}
+            <div class="card">
+                <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', '{{ groups['Immich']['url'] }}', '{{ groups['Immich']['services'][0]['id'] }}')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="{{ groups['Immich']['icon_url'] }}" alt="icon">
+                    <h2>Immich Photos</h2>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    {% for s in groups['Immich']['services'] %}
+                    <div class="sub-service" style="padding: 6px 10px; margin-bottom: 5px; font-size: 0.8rem;">
+                        <span>{{ s.name }}</span>
+                        <span class="status-{{ s.status }}">●</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Open Immich</a>
+            </div>
+            {% endif %}
+        
+            {% for app in groups['Apps'] %}
+            <div class="card">
+                <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="{{ app.icon_url }}" alt="icon">
+                    <h2>{{ app.name }}</h2>
+                </div>
+                <p>Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+                <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
+            </div>
+            {% endfor %}
+        </div>
 
     <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
