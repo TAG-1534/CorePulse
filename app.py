@@ -28,7 +28,7 @@ PORT_MAP = {
     "immich_server": {"port": "2283", "proto": "http"},
     "plex": {"port": "32400", "proto": "http"},
     "pihole": {"port": "80", "proto": "http"},
-    "portainer": {"port": "9443", "proto": "https"},  # Note the https
+    "portainer": {"port": "9443", "proto": "https"},
     "vaultstream": {"port": "5005", "proto": "http"}
 }
 
@@ -42,11 +42,8 @@ def format_bytes(size):
     return f"{round(size, 2)}{power_labels[n]}B"
 
 def clean_name(name):
-    # 1. Replace underscores and hyphens with spaces
     name = re.sub(r'[-_]', ' ', name)
-    # 2. Add a space before capital letters (e.g., VaultStream -> Vault Stream)
     name = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
-    # 3. Capitalize the first letter of every word
     return name.title()
 
 def get_icon_url(name):
@@ -64,7 +61,6 @@ def get_proxmox_stats():
         return []
     headers = {"Authorization": f"PVEAPIToken={PROXMOX_TOKEN_ID}={PROXMOX_TOKEN_SECRET}"}
     try:
-        # The standard Proxmox API path for QEMU (VMs)
         r = requests.get(f"{PROXMOX_URL}/api2/json/nodes/{PROXMOX_NODE}/qemu", headers=headers, verify=False, timeout=2)
         if r.status_code == 200:
             vms = []
@@ -73,17 +69,16 @@ def get_proxmox_stats():
                 max_mem = vm.get('maxmem', 1)
                 curr_mem = vm.get('mem', 0)
                 mem_pct = round((curr_mem / max_mem) * 100, 1) if max_mem > 0 else 0
-                # Update the vms.append section in your get_proxmox_stats function:
                 vms.append({
-                "name": vm['name'],
-                "status": vm['status'],
-                "vmid": vm['vmid'],
-                "cpu": cpu,
-                "mem_pct": mem_pct,
-                "mem_used": format_bytes(curr_mem),
-                "mem_max": format_bytes(max_mem),
-                "console_url": f"{PROXMOX_URL}/#v1:0:18:4::{vm['vmid']}" # Direct link to VM console
-            })
+                    "name": vm['name'],
+                    "status": vm['status'],
+                    "vmid": vm['vmid'],
+                    "cpu": cpu,
+                    "mem_pct": mem_pct,
+                    "mem_used": format_bytes(curr_mem),
+                    "mem_max": format_bytes(max_mem),
+                    "console_url": f"{PROXMOX_URL}/#v1:0:18:4::{vm['vmid']}"
+                })
             return sorted(vms, key=lambda x: x['vmid'])
     except Exception as e:
         print(f"Proxmox Error: {e}")
@@ -98,7 +93,6 @@ def api_stats():
         "ram_used": format_bytes(vm.used),
         "ram_total": format_bytes(vm.total)
     }
-    # Including Proxmox in the live update
     vm_list = get_proxmox_stats()
     return jsonify({
         "system": system_stats,
@@ -127,16 +121,12 @@ def index():
     all_containers = client.containers.list(all=True)
     groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
     
-    # Pre-fetch Immich URL if possible
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
     groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
 
     for c in all_containers:
         raw_name = c.name.lstrip('/')
-        # Use our cleaning function (Make sure clean_name(name) is defined above!)
         display_name = clean_name(raw_name)
-        
-        # Get config from map
         config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
         
         if config:
@@ -187,13 +177,14 @@ def index():
         except Exception as e:
             print(f"Error connecting to TrueNAS: {e}")
 
-       return render_template('index.html', 
+    # This return MUST be aligned with the start of the index() function logic
+    return render_template('index.html', 
                            groups=groups, 
                            nas=nas_stats, 
                            system=system_stats, 
                            vms=vm_list,
                            nas_ip=TRUENAS_IP,
-                           PROXMOX_URL=PROXMOX_URL) # Add this line!
+                           PROXMOX_URL=PROXMOX_URL)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
