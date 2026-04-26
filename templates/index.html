@@ -312,7 +312,7 @@
             {% endfor %}
         </div>
 
-        <div id="stopped-heading" style="grid-column: 1 / -1; {{ 'display: flex;' if groups['Stopped'] else 'display: none;' }} align-items: center; margin: 30px 0 5px 0;">
+        <div id="stopped-heading" style="grid-column: 1 / -1; display: none; align-items: center; margin: 30px 0 5px 0;">
             <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Stopped / Inactive Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.1); flex-grow: 1; margin-left: 20px;"></div>
         </div>
@@ -493,6 +493,12 @@
                                 newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
                                 newBtn.innerText = "Offline";
                                 actionBtn.replaceWith(newBtn);
+                            }
+                            // At the very end of updateStats() inside the .then(data => { ... }) block:
+                            const stoppedArea = document.getElementById('stopped-containers');
+                            const stoppedHeading = document.getElementById('stopped-heading');
+                            if (stoppedArea && stoppedHeading) {
+                                stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
                             }
                         });
         
