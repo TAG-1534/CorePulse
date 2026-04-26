@@ -166,11 +166,8 @@ def index():
 
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
-    
-    # NEW: Sort alphabetically by container name
     all_containers.sort(key=lambda c: c.name.lstrip('/').lower())
 
-    # NEW: Replaced "Apps" with "Running" and "Stopped" lists
     groups = {
         "Immich": {"services": [], "status": "exited", "url": "", "name": "Immich Photos", "icon_url": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png"}, 
         "Running": [],
@@ -180,7 +177,9 @@ def index():
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
     immich_url = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
     groups["Immich"]["url"] = immich_url
-   immich_names = ['immich_server', 'immich_machine_learning', 'immich_postgres', 'immich_redis']
+
+    # THE FIX: Ensure these are all indented with exactly 4 spaces (or 1 tab)
+    immich_names = ['immich_server', 'immich_machine_learning', 'immich_postgres', 'immich_redis']
     
     for c in all_containers:
         raw_name = c.name.lstrip('/')
@@ -205,16 +204,12 @@ def index():
             "address": url
         }
 
-        # SORTING LOGIC
         if raw_name in immich_names:
             if c.status == "running":
-                # Put in Immich group if running
                 groups["Immich"]["services"].append(container_data)
             else:
-                # If stopped, show as an individual card so user can "Start" it
                 groups["Stopped"].append(container_data)
         else:
-            # Standard container handling
             if c.status == "running":
                 groups["Running"].append(container_data)
             else:
@@ -225,22 +220,13 @@ def index():
     if TRUENAS_IP and TRUENAS_API_KEY:
         headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
         try:
-            # We use the /pool endpoint
             r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3)
             if r.status_code == 200:
                 nas_stats["status"] = "Online"
                 for p in r.json():
-                    # TrueNAS SCALE usually provides usage in a nested 'usage' dict
-                    # But some versions might provide 'size' and 'allocated' in 'stats'
                     usage = p.get('usage', {})
-                    
-                    # Fallback chain for Total Size
                     total_bytes = usage.get('total') or p.get('size') or 1
-                    
-                    # Fallback chain for Used Size
                     used_bytes = usage.get('used') or p.get('allocated') or 0
-                    
-                    # Calculate percentage safely
                     percent = round((used_bytes / total_bytes) * 100, 1) if total_bytes > 0 else 0
                     
                     nas_stats["pools"].append({
@@ -250,8 +236,6 @@ def index():
                         "total_str": format_bytes(total_bytes),
                         "raw_percent": percent
                     })
-            else:
-                print(f"TrueNAS API returned status: {r.status_code}")
         except Exception as e:
             print(f"TrueNAS Error: {e}")
 
