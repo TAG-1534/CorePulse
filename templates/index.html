@@ -260,7 +260,7 @@
           <div class="card" id="card-immich-group" 
              style="display: {% if groups['Immich']['services']|length > 0 %} block {% else %} none {% endif %};">
             
-            <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
+            <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', '{{ app.address }}', '{{ app.id }}')">⋮</button>
             <div class="title-area" style="margin-bottom: 15px;">
                 <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
                 <h2>Immich Photos</h2>
