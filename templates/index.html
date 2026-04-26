@@ -15,10 +15,9 @@
             transition: filter 0.3s ease;
         }
 
-        /* Update this specific rule */
         body.modal-open .grid, body.modal-open .header-section {
             filter: blur(8px);
-            pointer-events: none; /* Keeps background unclickable */
+            pointer-events: none;
             user-select: none;
         }
 
@@ -26,6 +25,14 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 25px;
+        }
+
+        /* Fixed the Container Sections */
+        #running-containers, #stopped-containers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            grid-column: 1 / -1; /* Stretch across the main grid */
         }
 
         .card {
@@ -74,7 +81,7 @@
             height: 32px;
             border-radius: 6px;
             object-fit: contain;
-            background: rgba(255,255,255,0.05); /* Shows a subtle box if image fails */
+            background: rgba(255,255,255,0.05);
         }
 
         .title-area h2 {
@@ -122,7 +129,6 @@
         .btn:hover:not(:disabled) { background: #38bdf8; color: #0f172a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -131,7 +137,6 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            pointer-events: auto !important;
         }
 
         .modal-card {
@@ -142,36 +147,8 @@
             padding: 32px;
             width: 90%;
             max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .info-row { display: flex; justify-content: space-between; margin: 15px 0; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
-        .info-row strong { color: #94a3b8; }
-        .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; opacity: 0.5; }
-        
-        .control-group {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px dashed rgba(255,255,255,0.1);
-        }
-
-        /* Color indicators (Circles) */
-        .dot {
-            height: 8px;
-            width: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-        }
-        .dot-cpu { background-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
-        .dot-mem { background-color: #a855f7; box-shadow: 0 0 8px rgba(168, 85, 247, 0.5); }
-        
-        /* Updated Progress Bar Colors */
-        .bg-cpu { background: #38bdf8 !important; }
-        .bg-mem { background: #a855f7 !important; }
-
-        /* Progress Circle Container */
         .refresh-timer {
             position: relative;
             width: 20px;
@@ -181,56 +158,42 @@
             vertical-align: middle;
         }
         
-        .refresh-timer svg {
-            transform: rotate(-90deg);
-            width: 20px;
-            height: 20px;
-        }
-        
-        .refresh-timer circle {
-            fill: none;
-            stroke-width: 3;
-        }
-        
-        .refresh-timer .track {
-            stroke: rgba(255, 255, 255, 0.1);
-        }
-        
+        .refresh-timer svg { transform: rotate(-90deg); width: 20px; height: 20px; }
+        .refresh-timer circle { fill: none; stroke-width: 3; }
+        .refresh-timer .track { stroke: rgba(255, 255, 255, 0.1); }
         .refresh-timer .bar {
-            stroke: #a855f7; /* Matching the Proxmox Purple */
-            stroke-dasharray: 50.24; /* Circumference of the circle */
+            stroke: #a855f7;
+            stroke-dasharray: 50.24;
             stroke-dashoffset: 0;
             transition: stroke-dashoffset 0.1s linear;
             stroke-linecap: round;
-            filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.5));
         }
-        
     </style>
 </head>
 <body>
 
     <div class="header-section" style="display: flex; align-items: center; gap: 20px; margin-bottom: 50px; padding-left: 10px;">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 0 20px rgba(45, 212, 191, 0.2);">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="width: 64px; height: 64px; border-radius: 14px;">
         <div>
-            <h1 style="margin: 0; font-size: 2.8rem; font-weight: 900; letter-spacing: -1.5px; background: linear-gradient(135deg, #2dd4bf 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CorePulse</h1>
-            <p style="margin: 0; color: #94a3b8; font-size: 0.9rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;">Self-Hosted Command Center</p>
+            <h1 style="margin: 0; font-size: 2.8rem; font-weight: 900; background: linear-gradient(135deg, #2dd4bf 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CorePulse</h1>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.9rem; text-transform: uppercase;">Self-Hosted Command Center</p>
         </div>
     </div>
 
     <div class="grid">
-       <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
+        <div class="card" style="grid-column: 1 / -1; background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="title-area">
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
-                    <h2>Infrastructure Nodes (Proxmox)</h2>
-                    <div class="refresh-timer" title="Data Refresh Cycle">
+                    <h2>Infrastructure Nodes</h2>
+                    <div class="refresh-timer">
                         <svg>
                             <circle class="track" cx="10" cy="10" r="8"></circle>
                             <circle id="timerBar" class="bar" cx="10" cy="10" r="8"></circle>
                         </svg>
                     </div>
                 </div>
-                <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">⚙️ Web GUI</a>
+                <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">⚙️ Web GUI</a>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
@@ -239,66 +202,33 @@
                     <button class="menu-btn" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A', null)">⋮</button>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
-                        <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
+                        <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}">● {{ vm.status.upper() }}</span>
                     </div>
                     {% if vm.status == 'running' %}
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
-                            <span>
-                                <span class="dot dot-cpu"></span> CPU: 
-                                <span id="text-cpu-{{ vm.vmid }}" style="color: #38bdf8;">{{ vm.cpu }}</span>%
-                            </span>
-                            <span>
-                                <span class="dot dot-mem"></span> RAM: 
-                                <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span> 
-                                / <span id="text-mem-total-{{ vm.vmid }}">{{ vm.mem_max }}</span>
-                            </span>
+                            <span>CPU: <span id="text-cpu-{{ vm.vmid }}" style="color: #38bdf8;">{{ vm.cpu }}</span>%</span>
+                            <span>RAM: <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span> / <span id="text-mem-total-{{ vm.vmid }}">{{ vm.mem_max }}</span></span>
                         </div>
-                        
                         <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
-                            <div id="vm-cpu-{{ vm.vmid }}" class="bg-cpu" style="width: {{ vm.cpu }}%; height: 100%; transition: width 0.5s ease;"></div>
+                            <div id="vm-cpu-{{ vm.vmid }}" class="bg-cpu" style="width: {{ vm.cpu }}%; background: #38bdf8; height: 100%;"></div>
                         </div>
-                        
                         <div class="progress-bg" style="height: 6px;">
-                            <div id="vm-mem-{{ vm.vmid }}" class="bg-mem" style="width: {{ vm.mem_pct }}%; height: 100%; transition: width 0.5s ease;"></div>
+                            <div id="vm-mem-{{ vm.vmid }}" class="bg-mem" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
                         </div>
-                        {% else %}
-                        <div style="color: #64748b; font-size: 0.8rem; font-style: italic; margin-top: 10px;">System Offline</div>
-                        {% endif %}
+                    {% else %}
+                        <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <div class="card" style="grid-column: 1 / -1; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div class="title-area">
-                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/truenas.png" alt="icon">
-                    <h2>TrueNAS Storage</h2>
-                    <span class="status-{{ 'running' if nas.status == 'Online' else 'exited' }}" style="font-size: 0.9rem; margin-left: 10px;">● {{ nas.status }}</span>
-                </div>
-                <a href="http://{{ nas_ip }}" target="_blank" class="btn">⚙️ Settings</a>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
-                {% for pool in nas.pools %}
-                <div class="sub-service" style="flex-direction: column;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;">
-                        <strong>{{ pool.name }}</strong>
-                        <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}%</span>
-                    </div>
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 8px 0;">
-                        {{ pool.used_str }} used of {{ pool.total_str }}
-                    </div>
-                    <div class="progress-bg"><div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div></div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
         <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 20px 0 5px 0;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Active Services</h2>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1;">Active Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        <div id="running-containers" style="display: contents;">
+        <div id="running-containers">
             {% for app in groups['Running'] %}
             <div class="card" id="card-{{ app.id }}">
                 <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
@@ -313,11 +243,11 @@
         </div>
 
         <div id="stopped-heading" style="grid-column: 1 / -1; display: none; align-items: center; margin: 30px 0 5px 0;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Stopped / Inactive Services</h2>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1;">Stopped Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.1); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        <div id="stopped-containers" style="display: contents;">
+        <div id="stopped-containers">
             {% for app in groups['Stopped'] %}
             <div class="card" id="card-{{ app.id }}" style="opacity: 0.6; filter: grayscale(0.8);">
                 <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
@@ -326,11 +256,12 @@
                     <h2 style="color: #94a3b8;">{{ app.name }}</h2>
                 </div>
                 <p style="font-size: 0.9rem; color: #f87171;">Status: <span class="status-exited">● {{ app.status.upper() }}</span></p>
-                <button class="btn" disabled style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;">Offline</button>
+                <button class="btn" disabled style="width: 100%; box-sizing: border-box;">Offline</button>
             </div>
             {% endfor %}
         </div>
-        
+    </div>
+
     <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -340,22 +271,22 @@
             <div class="info-row"><strong>Status</strong><span id="modalStatus"></span></div>
             <div class="info-row"><strong>Address</strong><span id="modalAddress" style="color: #38bdf8;"></span></div>
             <div class="info-row"><strong>Stack / Image</strong><span id="modalImage" style="max-width: 200px; text-align: right; word-break: break-all;"></span></div>
-            
-            <div id="containerControls" class="control-group" style="display: none;">
-                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Container Actions</p>
+            <div id="containerControls" class="control-group" style="display: none; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
                 <div style="display: flex; gap: 10px;">
-                    <button id="ctrlStart" class="btn" style="flex:1; background: rgba(74, 222, 128, 0.1); color: #4ade80;" onclick="triggerAction('start')">Start</button>
-                    <button id="ctrlRestart" class="btn" style="flex:1;" onclick="triggerAction('restart')">Restart</button>
-                    <button id="ctrlStop" class="btn" style="flex:1; background: rgba(248, 113, 113, 0.1); color: #f87171;" onclick="triggerAction('stop')">Stop</button>
+                    <button id="ctrlStart" class="btn" style="flex:1;" onclick="triggerAction('start')">Start</button>
+                    <button id="ctrlStop" class="btn" style="flex:1;" onclick="triggerAction('stop')">Stop</button>
                 </div>
             </div>
-
             <a id="modalLink" href="#" target="_blank" class="btn" style="width:100%; box-sizing: border-box; margin-top:20px;">Access Service</a>
         </div>
     </div>
 
     <script>
         let currentContainerId = null;
+        let timeLeft = 5000;
+        const refreshInterval = 5000;
+        const timerBar = document.getElementById('timerBar');
+        const circumference = 50.24;
 
         function openInfoMenu(name, status, url, image, address, containerId) {
             currentContainerId = containerId;
@@ -371,141 +302,93 @@
             document.body.classList.add('modal-open');
         }
 
-        function triggerAction(action) {
-            if (!currentContainerId) return;
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "...";
-            btn.disabled = true;
-
-            fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        alert(`${action.toUpperCase()} command sent! Refreshing dashboard...`);
-                        location.reload();
-                    } else {
-                        alert("Error: " + (data.error || "Action failed"));
-                    }
-                })
-                .catch(err => alert("Communication error with server."))
-                .finally(() => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                });
-        }
-
         function closeInfoMenu() {
             document.getElementById('infoModal').style.display = 'none';
             document.body.classList.remove('modal-open');
-            currentContainerId = null;
         }
 
-        let timeLeft = 5000; // 5 seconds
-        const refreshInterval = 5000;
-        const timerBar = document.getElementById('timerBar');
-        const circumference = 50.24;
-        
         function runTimer() {
-            timeLeft -= 100; // Tick every 100ms
-            
+            timeLeft -= 100;
             if (timeLeft <= 0) {
-                updateStats(); // Trigger the actual data fetch
-                timeLeft = refreshInterval; // Reset timer
+                timeLeft = refreshInterval;
+                updateStats();
             }
-        
-            // Calculate progress (0 to 1)
             const progress = timeLeft / refreshInterval;
-            // Update the SVG circle offset
             const offset = circumference - (progress * circumference);
             if (timerBar) timerBar.style.strokeDashoffset = offset;
         }
         
-        // Start the smooth timer loop
         setInterval(runTimer, 100);
-        
+
         function updateStats() {
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
-                    // 1. Proxmox Updates (Keep as is)
+                    // Update VMs
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
                             const mb = document.getElementById(`vm-mem-${vm.vmid}`);
                             if(cb) cb.style.width = vm.cpu + '%';
                             if(mb) mb.style.width = vm.mem_pct + '%';
-                            
                             const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
-                            const tmemUsed = document.getElementById(`text-mem-raw-${vm.vmid}`);
-                            const tmemTotal = document.getElementById(`text-mem-total-${vm.vmid}`);
                             if(tcpu) tcpu.innerText = vm.cpu;
-                            if(tmemUsed) tmemUsed.innerText = vm.mem_used;
-                            if(tmemTotal) tmemTotal.innerText = vm.mem_max;
                         });
                     }
-        
-                    // 2. Container Position & Status Updates
+
+                    // Update Containers
                     if (data.containers) {
                         const runningArea = document.getElementById('running-containers');
                         const stoppedArea = document.getElementById('stopped-containers');
                         const stoppedHeading = document.getElementById('stopped-heading');
-        
+
                         data.containers.forEach(app => {
                             const card = document.getElementById(`card-${app.id}`);
                             if (!card) return;
-                        
+
                             const isRunning = app.status.toLowerCase() === 'running';
-                            const statusText = card.querySelector('p span');
-                            const runningArea = document.getElementById('running-containers');
-                            const stoppedArea = document.getElementById('stopped-containers');
-                        
-                            // 1. Handle Positioning
-                            if (isRunning && card.parentElement.id !== 'running-containers') {
+                            
+                            // Move Card logic
+                            if (isRunning && card.parentElement !== runningArea) {
                                 runningArea.appendChild(card);
-                            } else if (!isRunning && card.parentElement.id !== 'stopped-containers') {
+                            } else if (!isRunning && card.parentElement !== stoppedArea) {
                                 stoppedArea.appendChild(card);
                             }
-                        
-                            // 2. Handle Visuals
+
+                            // Visuals
                             card.style.opacity = isRunning ? "1" : "0.6";
                             card.style.filter = isRunning ? "none" : "grayscale(0.8)";
                             
+                            const statusText = card.querySelector('p span');
                             if (statusText) {
                                 statusText.className = isRunning ? 'status-running' : 'status-exited';
                                 statusText.innerText = isRunning ? '● RUNNING' : `● ${app.status.toUpperCase()}`;
                             }
-                        
-                            // 3. Handle the Button/Link swap
+
+                            // Button Swap logic
                             let actionBtn = card.querySelector('.btn');
                             if (isRunning && actionBtn.tagName === 'BUTTON') {
-                                const newLink = document.createElement('a');
-                                newLink.href = app.url;
-                                newLink.target = "_blank";
-                                newLink.className = "btn";
-                                newLink.style.cssText = "width: 100%; box-sizing: border-box;";
-                                newLink.innerText = "Launch App";
-                                actionBtn.replaceWith(newLink);
+                                const a = document.createElement('a');
+                                a.href = app.url; a.target = "_blank"; a.className = "btn";
+                                a.style.cssText = "width: 100%; box-sizing: border-box;";
+                                a.innerText = "Launch App";
+                                actionBtn.replaceWith(a);
                             } else if (!isRunning && actionBtn.tagName === 'A') {
-                                const newBtn = document.createElement('button');
-                                newBtn.className = "btn";
-                                newBtn.disabled = true;
-                                newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
-                                newBtn.innerText = "Offline";
-                                actionBtn.replaceWith(newBtn);
-                            }
-                            // At the very end of updateStats() inside the .then(data => { ... }) block:
-                            const stoppedArea = document.getElementById('stopped-containers');
-                            const stoppedHeading = document.getElementById('stopped-heading');
-                            if (stoppedArea && stoppedHeading) {
-                                stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
+                                const b = document.createElement('button');
+                                b.className = "btn"; b.disabled = true;
+                                b.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #64748b;";
+                                b.innerText = "Offline";
+                                actionBtn.replaceWith(b);
                             }
                         });
-        
-                        stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
+
+                        // Heading Visibility - This was the primary fix for the missing section
+                        stoppedHeading.style.display = (stoppedArea.children.length > 0) ? 'flex' : 'none';
                     }
-                });
+                })
+                .catch(err => console.error("Stats refresh failed", err));
         }
+
         window.addEventListener('keydown', (e) => { if (e.key === "Escape") closeInfoMenu(); });
     </script>
 </body>
