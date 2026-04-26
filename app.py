@@ -133,15 +133,11 @@ def api_stats():
 def index():
     # --- Host System Stats ---
     vm = psutil.virtual_memory()
-    cpu_freq = psutil.cpu_freq()
     system_stats = {
         "cpu_usage": psutil.cpu_percent(interval=0.1),
-        "cpu_count": psutil.cpu_count(logical=True),
-        "cpu_mhz": round(cpu_freq.current, 0) if cpu_freq else "N/A",
-        "ram_total": format_bytes(vm.total),
+        "ram_percent": vm.percent,
         "ram_used": format_bytes(vm.used),
-        "ram_free": format_bytes(vm.available),
-        "ram_percent": vm.percent
+        "ram_total": format_bytes(vm.total)
     }
 
     # --- Proxmox Logic ---
@@ -149,8 +145,13 @@ def index():
 
     # --- Docker Logic ---
     all_containers = client.containers.list(all=True)
-    groups = {"Immich": {"services": [], "status": "exited", "url": ""}, "Apps": []}
+    # Initialize groups
+    groups = {
+        "Immich": {"services": [], "status": "exited", "url": "", "name": "Immich Photos", "icon_url": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png"}, 
+        "Apps": []
+    }
     
+    # Set Immich URL from Port Map
     immich_cfg = PORT_MAP.get("immich_server", {"port": "2283", "proto": "http"})
     groups["Immich"]["url"] = f"{immich_cfg['proto']}://{PORTAINER_IP}:{immich_cfg['port']}"
 
@@ -159,18 +160,16 @@ def index():
         display_name = clean_name(raw_name)
         config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
         
-        # Determine the web address for the dashboard links
+        url = "#"
         if config:
             proto = config.get("proto", "http")
             port = config.get("port", "")
-            host = PORTAINER_IP or TRUENAS_IP
-            url = f"{proto}://{host}:{port}"
-        else:
-            url = "#"
+            url = f"{proto}://{PORTAINER_IP}:{port}"
 
         image_name = c.image.tags[0] if c.image.tags else "Unknown Image"
+        
         container_data = {
-            "id": c.id, # Needed for the API restart calls
+            "id": c.id,
             "name": display_name, 
             "status": c.status, 
             "icon_url": get_icon_url(raw_name), 
@@ -179,6 +178,7 @@ def index():
             "address": url
         }
 
+        # Check if container belongs to Immich
         if "immich" in raw_name.lower():
             groups["Immich"]["services"].append(container_data)
             if c.status == "running":
@@ -204,11 +204,10 @@ def index():
                         "name": p['name'], "status": p['status'],
                         "used_str": format_bytes(alloc_raw),
                         "total_str": format_bytes(total_raw),
-                        "free_str": format_bytes(total_raw - alloc_raw),
                         "raw_percent": percent
                     })
         except Exception as e:
-            print(f"Error connecting to TrueNAS: {e}")
+            print(f"TrueNAS Error: {e}")
 
     return render_template('index.html', 
                            groups=groups, 
