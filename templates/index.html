@@ -72,6 +72,7 @@
             height: 32px;
             border-radius: 6px;
             object-fit: contain;
+            background: rgba(255,255,255,0.05); /* Shows a subtle box if image fails */
         }
 
         .title-area h2 {
@@ -296,6 +297,10 @@
         </div>
 
         {% if groups['Immich']['services'] %}
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 20px 0 5px 0;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Photo Stack</h2>
+            <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
+        </div>
         <div class="card">
             <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', '{{ groups['Immich']['url'] }}', '{{ groups['Immich']['services'][0]['id'] }}')">⋮</button>
             <div class="title-area" style="margin-bottom: 15px;">
@@ -314,18 +319,44 @@
         </div>
         {% endif %}
 
-        {% for app in groups['Apps'] %}
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 30px 0 5px 0;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: #4ade80; font-weight: 600;">Active Services</h2>
+            <div style="height: 1px; background: rgba(74, 222, 128, 0.2); flex-grow: 1; margin-left: 20px;"></div>
+        </div>
+
+        {% for app in groups['Running'] %}
         <div class="card">
             <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
             <div class="title-area" style="margin-bottom: 15px;">
                 <img src="{{ app.icon_url }}" alt="icon">
                 <h2>{{ app.name }}</h2>
             </div>
-            <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-{{ app.status }}">● {{ app.status.upper() }}</span></p>
+            <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
             <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
         </div>
         {% endfor %}
-    </div> <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
+
+        {% if groups['Stopped'] %}
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 30px 0 5px 0;">
+            <h2 style="margin: 0; font-size: 1.3rem; color: #94a3b8; font-weight: 600;">Stopped / Inactive</h2>
+            <div style="height: 1px; background: rgba(255, 255, 255, 0.1); flex-grow: 1; margin-left: 20px;"></div>
+        </div>
+
+        {% for app in groups['Stopped'] %}
+        <div class="card" style="opacity: 0.6; filter: grayscale(0.8);">
+            <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
+            <div class="title-area" style="margin-bottom: 15px;">
+                <img src="{{ app.icon_url }}" alt="icon">
+                <h2 style="color: #94a3b8;">{{ app.name }}</h2>
+            </div>
+            <p style="font-size: 0.9rem; color: #f87171;">Status: <span class="status-exited">● {{ app.status.upper() }}</span></p>
+            <button class="btn" disabled style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;">Offline</button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        ```
+
+Just drop that in right above your `<div id="infoModal"...>` line. I also added an `{% if groups['Stopped'] %}` check around the Stopped section, so if you happen to have a perfect day where everything is online, the "Stopped" header will automatically hide itself! <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2 id="modalTitle">Service Info</h2>
