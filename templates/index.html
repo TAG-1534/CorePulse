@@ -15,9 +15,11 @@
             transition: filter 0.3s ease;
         }
 
+        /* Update this specific rule */
         body.modal-open .grid, body.modal-open .header-section {
             filter: blur(8px);
-            pointer-events: none;
+            pointer-events: none; /* Keeps background unclickable */
+            user-select: none;
         }
 
         .grid {
@@ -129,6 +131,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            pointer-events: auto !important;
         }
 
         .modal-card {
@@ -324,6 +327,18 @@
             <div style="height: 1px; background: rgba(74, 222, 128, 0.2); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
+        {% if groups['Immich']['services'] %}
+        <div class="card">
+            <button class="menu-btn" onclick="openInfoMenu('Immich Photos', '{{ groups['Immich']['status'] }}', '{{ groups['Immich']['url'] }}', 'Immich Stack', '{{ groups['Immich']['address'] }}', '{{ groups['Immich']['services'][0]['id'] }}')">⋮</button>
+            <div class="title-area" style="margin-bottom: 15px;">
+                <img src="{{ groups['Immich']['icon_url'] }}" alt="icon">
+                <h2>Immich Photos</h2>
+            </div>
+            <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● STACK ONLINE</span></p>
+            <a href="{{ groups['Immich']['url'] }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Open Immich</a>
+        </div>
+        {% endif %}
+
         {% for app in groups['Running'] %}
         <div class="card">
             <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
@@ -353,7 +368,8 @@
             <button class="btn" disabled style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;">Offline</button>
         </div>
         {% endfor %}
-        {% endif %} 
+        {% endif %}
+    </div>
     <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
