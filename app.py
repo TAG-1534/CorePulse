@@ -117,16 +117,27 @@ def container_control(container_id, action):
 @app.route('/api/stats')
 def api_stats():
     vm = psutil.virtual_memory()
-    system_stats = {
-        "cpu_usage": psutil.cpu_percent(interval=0.1),
-        "ram_percent": vm.percent,
-        "ram_used": format_bytes(vm.used),
-        "ram_total": format_bytes(vm.total)
-    }
-    vm_list = get_proxmox_stats()
+    
+    # Get fresh container data for the JS to move cards
+    all_containers = client.containers.list(all=True)
+    container_list = []
+    for c in all_containers:
+        raw_name = c.name.lstrip('/')
+        config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
+        url = "#"
+        if config:
+            url = f"{config.get('proto', 'http')}://{PORTAINER_IP}:{config.get('port', '')}"
+            
+        container_list.append({
+            "id": c.id,
+            "name": clean_name(raw_name),
+            "status": c.status,
+            "url": url
+        })
+
     return jsonify({
-        "system": system_stats,
-        "vms": vm_list
+        "vms": get_proxmox_stats(),
+        "containers": container_list  # This is the "fuel" for your JavaScript
     })
 
 @app.route('/')
