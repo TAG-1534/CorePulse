@@ -15,10 +15,10 @@
             transition: filter 0.3s ease;
         }
 
-        /* Update this specific rule */
-        body.modal-open .grid, body.modal-open .header-section {
-            filter: blur(8px);
-            pointer-events: none; /* Keeps background unclickable */
+        /* 3a: Blurs everything EXCEPT the modal when open */
+        body.modal-open > :not(#infoModal) {
+            filter: blur(10px);
+            pointer-events: none;
             user-select: none;
         }
 
@@ -36,7 +36,7 @@
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, opacity 0.3s ease, filter 0.3s ease;
             position: relative;
         }
 
@@ -74,13 +74,14 @@
             height: 32px;
             border-radius: 6px;
             object-fit: contain;
-            background: rgba(255,255,255,0.05); /* Shows a subtle box if image fails */
+            background: rgba(255,255,255,0.05);
         }
 
         .title-area h2 {
             margin: 0;
             font-size: 1.25rem;
             letter-spacing: -0.5px;
+            transition: color 0.3s ease; /* 1b: Smooth color return */
         }
 
         .status-running, .status-online { color: #4ade80; text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
@@ -130,12 +131,11 @@
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
-            pointer-events: auto !important;
+            z-index: 1001; /* Higher than blurred content */
         }
 
         .modal-card {
-            background: rgba(30, 41, 59, 0.95);
+            background: rgba(30, 41, 59, 0.98);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
@@ -156,55 +156,24 @@
             border-top: 1px dashed rgba(255,255,255,0.1);
         }
 
-        /* Color indicators (Circles) */
-        .dot {
-            height: 8px;
-            width: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 4px;
-        }
+        .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
         .dot-cpu { background-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
         .dot-mem { background-color: #a855f7; box-shadow: 0 0 8px rgba(168, 85, 247, 0.5); }
-        
-        /* Updated Progress Bar Colors */
         .bg-cpu { background: #38bdf8 !important; }
         .bg-mem { background: #a855f7 !important; }
 
-        /* Progress Circle Container */
-        .refresh-timer {
-            position: relative;
-            width: 20px;
-            height: 20px;
-            margin-left: 10px;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        
-        .refresh-timer svg {
-            transform: rotate(-90deg);
-            width: 20px;
-            height: 20px;
-        }
-        
-        .refresh-timer circle {
-            fill: none;
-            stroke-width: 3;
-        }
-        
-        .refresh-timer .track {
-            stroke: rgba(255, 255, 255, 0.1);
-        }
-        
+        .refresh-timer { position: relative; width: 20px; height: 20px; margin-left: 10px; display: inline-block; vertical-align: middle; }
+        .refresh-timer svg { transform: rotate(-90deg); width: 20px; height: 20px; }
+        .refresh-timer circle { fill: none; stroke-width: 3; }
+        .refresh-timer .track { stroke: rgba(255, 255, 255, 0.1); }
         .refresh-timer .bar {
-            stroke: #a855f7; /* Matching the Proxmox Purple */
-            stroke-dasharray: 50.24; /* Circumference of the circle */
+            stroke: #a855f7;
+            stroke-dasharray: 50.24;
             stroke-dashoffset: 0;
             transition: stroke-dashoffset 0.1s linear;
             stroke-linecap: round;
             filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.5));
         }
-        
     </style>
 </head>
 <body>
@@ -224,10 +193,7 @@
                     <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png" alt="icon">
                     <h2>Infrastructure Nodes (Proxmox)</h2>
                     <div class="refresh-timer" title="Data Refresh Cycle">
-                        <svg>
-                            <circle class="track" cx="10" cy="10" r="8"></circle>
-                            <circle id="timerBar" class="bar" cx="10" cy="10" r="8"></circle>
-                        </svg>
+                        <svg><circle class="track" cx="10" cy="10" r="8"></circle><circle id="timerBar" class="bar" cx="10" cy="10" r="8"></circle></svg>
                     </div>
                 </div>
                 <a href="{{ PROXMOX_URL }}" target="_blank" class="btn" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">⚙️ Web GUI</a>
@@ -243,27 +209,18 @@
                     </div>
                     {% if vm.status == 'running' %}
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
-                            <span>
-                                <span class="dot dot-cpu"></span> CPU: 
-                                <span id="text-cpu-{{ vm.vmid }}" style="color: #38bdf8;">{{ vm.cpu }}</span>%
-                            </span>
-                            <span>
-                                <span class="dot dot-mem"></span> RAM: 
-                                <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span> 
-                                / <span id="text-mem-total-{{ vm.vmid }}">{{ vm.mem_max }}</span>
-                            </span>
+                            <span><span class="dot dot-cpu"></span> CPU: <span id="text-cpu-{{ vm.vmid }}" style="color: #38bdf8;">{{ vm.cpu }}</span>%</span>
+                            <span><span class="dot dot-mem"></span> RAM: <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span> / <span id="text-mem-total-{{ vm.vmid }}">{{ vm.mem_max }}</span></span>
                         </div>
-                        
                         <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
                             <div id="vm-cpu-{{ vm.vmid }}" class="bg-cpu" style="width: {{ vm.cpu }}%; height: 100%; transition: width 0.5s ease;"></div>
                         </div>
-                        
                         <div class="progress-bg" style="height: 6px;">
                             <div id="vm-mem-{{ vm.vmid }}" class="bg-mem" style="width: {{ vm.mem_pct }}%; height: 100%; transition: width 0.5s ease;"></div>
                         </div>
-                        {% else %}
+                    {% else %}
                         <div style="color: #64748b; font-size: 0.8rem; font-style: italic; margin-top: 10px;">System Offline</div>
-                        {% endif %}
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -285,21 +242,34 @@
                         <strong>{{ pool.name }}</strong>
                         <span style="color: #38bdf8; font-weight: bold;">{{ pool.raw_percent }}%</span>
                     </div>
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 8px 0;">
-                        {{ pool.used_str }} used of {{ pool.total_str }}
-                    </div>
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin: 4px 0 8px 0;">{{ pool.used_str }} used of {{ pool.total_str }}</div>
                     <div class="progress-bg"><div style="width: {{ pool.raw_percent }}%; background: #38bdf8; height: 100%;"></div></div>
                 </div>
                 {% endfor %}
             </div>
         </div>
+
         <div style="grid-column: 1 / -1; display: flex; align-items: center; margin: 20px 0 5px 0;">
             <h2 style="margin: 0; font-size: 1.3rem; color: #cbd5e1; font-weight: 600;">Active Services</h2>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
         <div id="running-containers" style="display: contents;">
+            <div class="card" id="card-immich-group">
+                <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
+                <div class="title-area" style="margin-bottom: 15px;">
+                    <img src="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/immich.png" alt="icon">
+                    <h2>Immich Photo Engine</h2>
+                </div>
+                <div style="display: grid; gap: 8px;">
+                    <div class="sub-service" style="padding: 8px; font-size: 0.8rem;"><span>Server Core</span><span class="status-running">● RUNNING</span></div>
+                    <div class="sub-service" style="padding: 8px; font-size: 0.8rem;"><span>ML Engine</span><span class="status-running">● RUNNING</span></div>
+                </div>
+                <a href="{{ immich_url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box; margin-top: 12px;">Launch Immich</a>
+            </div>
+
             {% for app in groups['Running'] %}
+            {% if "immich" not in app.name.lower() %}
             <div class="card" id="card-{{ app.id }}">
                 <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
                 <div class="title-area" style="margin-bottom: 15px;">
@@ -309,6 +279,7 @@
                 <p style="font-size: 0.9rem; color: #94a3b8;">Status: <span class="status-running">● RUNNING</span></p>
                 <a href="{{ app.url }}" target="_blank" class="btn" style="width: 100%; box-sizing: border-box;">Launch App</a>
             </div>
+            {% endif %}
             {% endfor %}
         </div>
 
@@ -330,6 +301,7 @@
             </div>
             {% endfor %}
         </div>
+    </div>
         
     <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
@@ -342,14 +314,11 @@
             <div class="info-row"><strong>Stack / Image</strong><span id="modalImage" style="max-width: 200px; text-align: right; word-break: break-all;"></span></div>
             
             <div id="containerControls" class="control-group" style="display: none;">
-                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Container Actions</p>
                 <div style="display: flex; gap: 10px;">
                     <button id="ctrlStart" class="btn" style="flex:1; background: rgba(74, 222, 128, 0.1); color: #4ade80;" onclick="triggerAction('start')">Start</button>
-                    <button id="ctrlRestart" class="btn" style="flex:1;" onclick="triggerAction('restart')">Restart</button>
                     <button id="ctrlStop" class="btn" style="flex:1; background: rgba(248, 113, 113, 0.1); color: #f87171;" onclick="triggerAction('stop')">Stop</button>
                 </div>
             </div>
-
             <a id="modalLink" href="#" target="_blank" class="btn" style="width:100%; box-sizing: border-box; margin-top:20px;">Access Service</a>
         </div>
     </div>
@@ -371,81 +340,53 @@
             document.body.classList.add('modal-open');
         }
 
-        function triggerAction(action) {
-            if (!currentContainerId) return;
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "...";
-            btn.disabled = true;
-
-            fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        alert(`${action.toUpperCase()} command sent! Refreshing dashboard...`);
-                        location.reload();
-                    } else {
-                        alert("Error: " + (data.error || "Action failed"));
-                    }
-                })
-                .catch(err => alert("Communication error with server."))
-                .finally(() => {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                });
-        }
-
         function closeInfoMenu() {
             document.getElementById('infoModal').style.display = 'none';
             document.body.classList.remove('modal-open');
             currentContainerId = null;
         }
 
-        let timeLeft = 5000; // 5 seconds
+        function triggerAction(action) {
+            if (!currentContainerId) return;
+            fetch(`/api/container/${currentContainerId}/${action}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    location.reload();
+                });
+        }
+
+        let timeLeft = 5000;
         const refreshInterval = 5000;
         const timerBar = document.getElementById('timerBar');
         const circumference = 50.24;
         
         function runTimer() {
-            timeLeft -= 100; // Tick every 100ms
-            
+            timeLeft -= 100;
             if (timeLeft <= 0) {
-                updateStats(); // Trigger the actual data fetch
-                timeLeft = refreshInterval; // Reset timer
+                updateStats();
+                timeLeft = refreshInterval;
             }
-        
-            // Calculate progress (0 to 1)
             const progress = timeLeft / refreshInterval;
-            // Update the SVG circle offset
             const offset = circumference - (progress * circumference);
             if (timerBar) timerBar.style.strokeDashoffset = offset;
         }
-        
-        // Start the smooth timer loop
         setInterval(runTimer, 100);
         
         function updateStats() {
             fetch('/api/stats')
                 .then(r => r.json())
                 .then(data => {
-                    // 1. Proxmox Updates (Keep as is)
                     if (data.vms) {
                         data.vms.forEach(vm => {
                             const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
                             const mb = document.getElementById(`vm-mem-${vm.vmid}`);
                             if(cb) cb.style.width = vm.cpu + '%';
                             if(mb) mb.style.width = vm.mem_pct + '%';
-                            
                             const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
-                            const tmemUsed = document.getElementById(`text-mem-raw-${vm.vmid}`);
-                            const tmemTotal = document.getElementById(`text-mem-total-${vm.vmid}`);
                             if(tcpu) tcpu.innerText = vm.cpu;
-                            if(tmemUsed) tmemUsed.innerText = vm.mem_used;
-                            if(tmemTotal) tmemTotal.innerText = vm.mem_max;
                         });
                     }
-        
-                    // 2. Container Position & Status Updates
+
                     if (data.containers) {
                         const runningArea = document.getElementById('running-containers');
                         const stoppedArea = document.getElementById('stopped-containers');
@@ -457,50 +398,45 @@
                         
                             const isRunning = app.status.toLowerCase() === 'running';
                             const statusText = card.querySelector('p span');
-                            const runningArea = document.getElementById('running-containers');
-                            const stoppedArea = document.getElementById('stopped-containers');
+                            const titleText = card.querySelector('.title-area h2'); // 1b Reference
                         
-                            // 1. Handle Positioning
-                            if (isRunning && card.parentElement.id !== 'running-containers') {
-                                runningArea.appendChild(card);
-                            } else if (!isRunning && card.parentElement.id !== 'stopped-containers') {
-                                stoppedArea.appendChild(card);
+                            if (isRunning) {
+                                if (card.parentElement.id !== 'running-containers') runningArea.appendChild(card);
+                                card.style.opacity = "1";
+                                card.style.filter = "none";
+                                if (titleText) titleText.style.color = "white"; // 1b Fix
+                            } else {
+                                if (card.parentElement.id !== 'stopped-containers') stoppedArea.appendChild(card);
+                                card.style.opacity = "0.6";
+                                card.style.filter = "grayscale(0.8)";
+                                if (titleText) titleText.style.color = "#94a3b8"; // 1b Fix
                             }
                         
-                            // 2. Handle Visuals
-                            card.style.opacity = isRunning ? "1" : "0.6";
-                            card.style.filter = isRunning ? "none" : "grayscale(0.8)";
-                            
                             if (statusText) {
+                                // 1a Fix: Ensuring classes are swapped correctly for green/red
                                 statusText.className = isRunning ? 'status-running' : 'status-exited';
                                 statusText.innerText = isRunning ? '● RUNNING' : `● ${app.status.toUpperCase()}`;
                             }
                         
-                            // 3. Handle the Button/Link swap
                             let actionBtn = card.querySelector('.btn');
                             if (isRunning && actionBtn.tagName === 'BUTTON') {
                                 const newLink = document.createElement('a');
-                                newLink.href = app.url;
-                                newLink.target = "_blank";
-                                newLink.className = "btn";
+                                newLink.href = app.url; newLink.target = "_blank"; newLink.className = "btn";
                                 newLink.style.cssText = "width: 100%; box-sizing: border-box;";
                                 newLink.innerText = "Launch App";
                                 actionBtn.replaceWith(newLink);
                             } else if (!isRunning && actionBtn.tagName === 'A') {
                                 const newBtn = document.createElement('button');
-                                newBtn.className = "btn";
-                                newBtn.disabled = true;
-                                newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;";
+                                newBtn.className = "btn"; newBtn.disabled = true;
+                                newBtn.style.cssText = "width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #64748b;";
                                 newBtn.innerText = "Offline";
                                 actionBtn.replaceWith(newBtn);
                             }
                         });
-        
                         stoppedHeading.style.display = stoppedArea.children.length > 0 ? 'flex' : 'none';
                     }
                 });
         }
-        window.addEventListener('keydown', (e) => { if (e.key === "Escape") closeInfoMenu(); });
     </script>
 </body>
 </html>
