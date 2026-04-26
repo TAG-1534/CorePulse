@@ -238,11 +238,13 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                 {% for vm in vms %}
                 <div class="sub-service" style="flex-direction: column; position: relative;">
-                    <button class="menu-btn" style="top: -2px; right: 5px;" onclick="openInfoMenu('{{ vm.name }}', '{{ vm.status }}', '#', 'Proxmox VM {{ vm.vmid }}', 'N/A', null)">⋮</button>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <button class="menu-btn" style="top: -2px; right: 5px;" onclick="openInfoMenu(...)">⋮</button>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-right: 25px;">
                         <strong>{{ vm.vmid }} - {{ vm.name }}</strong>
                         <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}">● {{ vm.status.upper() }}</span>
                     </div>
+                    
                     {% if vm.status == 'running' %}
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
                             <span><span class="dot dot-cpu"></span> CPU: <span id="text-cpu-{{ vm.vmid }}" style="color: var(--accent-blue);">{{ vm.cpu }}</span>%</span>
