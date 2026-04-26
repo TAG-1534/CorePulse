@@ -188,22 +188,33 @@ def index():
     if TRUENAS_IP and TRUENAS_API_KEY:
         headers = {"Authorization": f"Bearer {TRUENAS_API_KEY}"}
         try:
-            r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3, verify=False)
+            # We use the /pool endpoint
+            r = requests.get(f"http://{TRUENAS_IP}/api/v2.0/pool", headers=headers, timeout=3)
             if r.status_code == 200:
                 nas_stats["status"] = "Online"
                 for p in r.json():
+                    # TrueNAS SCALE usually provides usage in a nested 'usage' dict
+                    # But some versions might provide 'size' and 'allocated' in 'stats'
                     usage = p.get('usage', {})
-                    used_bytes = usage.get('used', 0)
-                    total_bytes = usage.get('total', 1)
-                    percent = round((used_bytes / total_bytes) * 100, 1)
+                    
+                    # Fallback chain for Total Size
+                    total_bytes = usage.get('total') or p.get('size') or 1
+                    
+                    # Fallback chain for Used Size
+                    used_bytes = usage.get('used') or p.get('allocated') or 0
+                    
+                    # Calculate percentage safely
+                    percent = round((used_bytes / total_bytes) * 100, 1) if total_bytes > 0 else 0
                     
                     nas_stats["pools"].append({
-                        "name": p['name'],
+                        "name": p.get('name', 'Unknown Pool'),
                         "status": p.get('status', 'HEALTHY'),
                         "used_str": format_bytes(used_bytes),
                         "total_str": format_bytes(total_bytes),
                         "raw_percent": percent
                     })
+            else:
+                print(f"TrueNAS API returned status: {r.status_code}")
         except Exception as e:
             print(f"TrueNAS Error: {e}")
 
