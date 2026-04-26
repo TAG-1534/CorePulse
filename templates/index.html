@@ -204,7 +204,8 @@
                             </span>
                             <span>
                                 <span class="dot dot-mem"></span> RAM: 
-                                <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }} / {{ vm.mem_max }}</span>
+                                <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span> 
+                                / <span id="text-mem-total-{{ vm.vmid }}">{{ vm.mem_max }}</span>
                             </span>
                         </div>
                         
@@ -357,17 +358,22 @@
             fetch('/api/stats').then(r => r.json()).then(data => {
                 if (data.vms) {
                     data.vms.forEach(vm => {
+                        // 1. Find the Progress Bars
                         const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
                         const mb = document.getElementById(`vm-mem-${vm.vmid}`);
-                        // Update width only to preserve our new CSS colors
+                        
+                        // 2. Update Progress Bar Widths
                         if(cb) cb.style.width = vm.cpu + '%';
                         if(mb) mb.style.width = vm.mem_pct + '%';
                         
-                        // Update text labels
+                        // 3. Update Text Labels
                         const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
-                        const tmem = document.getElementById(`text-mem-raw-${vm.vmid}`);
+                        const tmemUsed = document.getElementById(`text-mem-raw-${vm.vmid}`);
+                        const tmemTotal = document.getElementById(`text-mem-total-${vm.vmid}`);
+        
                         if(tcpu) tcpu.innerText = vm.cpu;
-                        if(tmem) tmem.innerText = vm.mem_used;
+                        if(tmemUsed) tmemUsed.innerText = vm.mem_used;
+                        if(tmemTotal) tmemTotal.innerText = vm.mem_max; // This adds the Total RAM
                     });
                 }
             });
