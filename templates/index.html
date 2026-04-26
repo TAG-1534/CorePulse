@@ -359,10 +359,13 @@
                     data.vms.forEach(vm => {
                         const cb = document.getElementById(`vm-cpu-${vm.vmid}`);
                         const mb = document.getElementById(`vm-mem-${vm.vmid}`);
-                        const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
-                        const tmem = document.getElementById(`text-mem-raw-${vm.vmid}`);
+                        // Update width only to preserve our new CSS colors
                         if(cb) cb.style.width = vm.cpu + '%';
                         if(mb) mb.style.width = vm.mem_pct + '%';
+                        
+                        // Update text labels
+                        const tcpu = document.getElementById(`text-cpu-${vm.vmid}`);
+                        const tmem = document.getElementById(`text-mem-raw-${vm.vmid}`);
                         if(tcpu) tcpu.innerText = vm.cpu;
                         if(tmem) tmem.innerText = vm.mem_used;
                     });
