@@ -187,13 +187,13 @@ def index():
         except Exception as e:
             print(f"Error connecting to TrueNAS: {e}")
 
-   return render_template('index.html', 
-                       groups=groups, 
-                       nas=nas_stats, 
-                       system=system_stats, 
-                       vms=vm_list,
-                       nas_ip=TRUENAS_IP,
-                       PROXMOX_URL=PROXMOX_URL) # Add this line!
+       return render_template('index.html', 
+                           groups=groups, 
+                           nas=nas_stats, 
+                           system=system_stats, 
+                           vms=vm_list,
+                           nas_ip=TRUENAS_IP,
+                           PROXMOX_URL=PROXMOX_URL) # Add this line!
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
