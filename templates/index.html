@@ -151,6 +151,21 @@
             padding-top: 20px;
             border-top: 1px dashed rgba(255,255,255,0.1);
         }
+
+        /* Color indicators (Circles) */
+        .dot {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .dot-cpu { background-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
+        .dot-mem { background-color: #a855f7; box-shadow: 0 0 8px rgba(168, 85, 247, 0.5); }
+        
+        /* Updated Progress Bar Colors */
+        .bg-cpu { background: #38bdf8 !important; }
+        .bg-mem { background: #a855f7 !important; }
     </style>
 </head>
 <body>
@@ -182,19 +197,27 @@
                         <span class="status-{{ 'running' if vm.status == 'running' else 'exited' }}" style="font-size: 0.8rem;">● {{ vm.status.upper() }}</span>
                     </div>
                     {% if vm.status == 'running' %}
-                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
-                        <span>CPU: <span id="text-cpu-{{ vm.vmid }}">{{ vm.cpu }}</span>%</span>
-                        <span>RAM: <span id="text-mem-raw-{{ vm.vmid }}">{{ vm.mem_used }}</span> / {{ vm.mem_max }}</span>
-                    </div>
-                    <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
-                        <div id="vm-cpu-{{ vm.vmid }}" style="width: {{ vm.cpu }}%; background: #4ade80; height: 100%;"></div>
-                    </div>
-                    <div class="progress-bg" style="height: 6px;">
-                        <div id="vm-mem-{{ vm.vmid }}" style="width: {{ vm.mem_pct }}%; background: #a855f7; height: 100%;"></div>
-                    </div>
-                    {% else %}
-                    <div style="color: #64748b; font-size: 0.8rem; font-style: italic;">System Offline</div>
-                    {% endif %}
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px;">
+                            <span>
+                                <span class="dot dot-cpu"></span> CPU: 
+                                <span id="text-cpu-{{ vm.vmid }}" style="color: #38bdf8;">{{ vm.cpu }}</span>%
+                            </span>
+                            <span>
+                                <span class="dot dot-mem"></span> RAM: 
+                                <span id="text-mem-raw-{{ vm.vmid }}" style="color: #a855f7;">{{ vm.mem_used }}</span>
+                            </span>
+                        </div>
+                        
+                        <div class="progress-bg" style="height: 6px; margin-bottom: 8px;">
+                            <div id="vm-cpu-{{ vm.vmid }}" class="bg-cpu" style="width: {{ vm.cpu }}%; height: 100%; transition: width 0.5s ease;"></div>
+                        </div>
+                        
+                        <div class="progress-bg" style="height: 6px;">
+                            <div id="vm-mem-{{ vm.vmid }}" class="bg-mem" style="width: {{ vm.mem_pct }}%; height: 100%; transition: width 0.5s ease;"></div>
+                        </div>
+                        {% else %}
+                        <div style="color: #64748b; font-size: 0.8rem; font-style: italic; margin-top: 10px;">System Offline</div>
+                        {% endif %}
                 </div>
                 {% endfor %}
             </div>
