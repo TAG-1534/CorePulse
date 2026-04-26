@@ -353,10 +353,8 @@
             <button class="btn" disabled style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b;">Offline</button>
         </div>
         {% endfor %}
-        {% endif %}
-        ```
-
-Just drop that in right above your `<div id="infoModal"...>` line. I also added an `{% if groups['Stopped'] %}` check around the Stopped section, so if you happen to have a perfect day where everything is online, the "Stopped" header will automatically hide itself! <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
+        {% endif %} 
+    <div id="infoModal" class="modal-overlay" onclick="closeInfoMenu()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h2 id="modalTitle">Service Info</h2>
