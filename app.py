@@ -14,16 +14,20 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 app = Flask(__name__)
 client = docker.from_env()
 
+# --- Configuration ---
 TRUENAS_IP = os.getenv("TRUENAS_IP")
 TRUENAS_API_KEY = os.getenv("TRUENAS_API_KEY")
 
-# Proxmox Config
 PROXMOX_URL = os.getenv("PROXMOX_URL")
 PROXMOX_NODE = os.getenv("PROXMOX_NODE")
 PROXMOX_TOKEN_ID = os.getenv("PROXMOX_TOKEN_ID")
 PROXMOX_TOKEN_SECRET = os.getenv("PROXMOX_TOKEN_SECRET")
 
 PORTAINER_IP = os.getenv("PORTAINER_IP")
+PORTAINER_API_KEY = os.getenv('PORTAINER_API_KEY') 
+ENDPOINT_ID = os.getenv('ENDPOINT_ID', '1')
+
+# This maps container names to their WEB ports for the dashboard links
 PORT_MAP = {
     "immich_server": {"port": "2283", "proto": "http"},
     "plex": {"port": "32400", "proto": "http"},
@@ -32,6 +36,7 @@ PORT_MAP = {
     "vaultstream": {"port": "5005", "proto": "http"}
 }
 
+# --- Helper Functions ---
 def format_bytes(size):
     power = 2**10
     n = 0
@@ -84,6 +89,31 @@ def get_proxmox_stats():
         print(f"Proxmox Error: {e}")
     return []
 
+# --- Routes ---
+
+@app.route('/api/container/<container_id>/<action>', methods=['POST'])
+def container_control(container_id, action):
+    """
+    Controls Docker containers via the Portainer API.
+    Action: start, stop, restart
+    """
+    if not PORTAINER_IP or not PORTAINER_API_KEY:
+        return jsonify({"error": "Portainer credentials missing"}), 500
+
+    # Portainer API uses port 9443 (HTTPS) or 9000 (HTTP) by default. 
+    # This is distinct from the apps' own ports in PORT_MAP.
+    portainer_base = f"https://{PORTAINER_IP}:9443" 
+    url = f"{portainer_base}/api/endpoints/{ENDPOINT_ID}/docker/containers/{container_id}/{action}"
+    
+    headers = {"X-API-Key": PORTAINER_API_KEY}
+    
+    try:
+        # Use verify=False if using self-signed certs on Portainer
+        response = requests.post(url, headers=headers, verify=False, timeout=5)
+        return jsonify({"status": "success", "portainer_response": response.status_code}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/stats')
 def api_stats():
     vm = psutil.virtual_memory()
@@ -129,6 +159,7 @@ def index():
         display_name = clean_name(raw_name)
         config = PORT_MAP.get(raw_name) or PORT_MAP.get(raw_name.lower())
         
+        # Determine the web address for the dashboard links
         if config:
             proto = config.get("proto", "http")
             port = config.get("port", "")
@@ -138,20 +169,22 @@ def index():
             url = "#"
 
         image_name = c.image.tags[0] if c.image.tags else "Unknown Image"
+        container_data = {
+            "id": c.id, # Needed for the API restart calls
+            "name": display_name, 
+            "status": c.status, 
+            "icon_url": get_icon_url(raw_name), 
+            "url": url,
+            "image": image_name,
+            "address": url
+        }
 
         if "immich" in raw_name.lower():
-            groups["Immich"]["services"].append({"name": display_name, "status": c.status})
+            groups["Immich"]["services"].append(container_data)
             if c.status == "running":
                 groups["Immich"]["status"] = "running"
         else:
-            groups["Apps"].append({
-                "name": display_name, 
-                "status": c.status, 
-                "icon_url": get_icon_url(raw_name), 
-                "url": url,
-                "image": image_name,
-                "address": url
-            })
+            groups["Apps"].append(container_data)
 
     # --- TrueNAS Storage Logic ---
     nas_stats = {"status": "Disconnected", "pools": []}
@@ -177,7 +210,6 @@ def index():
         except Exception as e:
             print(f"Error connecting to TrueNAS: {e}")
 
-    # This return MUST be aligned with the start of the index() function logic
     return render_template('index.html', 
                            groups=groups, 
                            nas=nas_stats, 
