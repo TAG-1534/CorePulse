@@ -256,7 +256,7 @@
             <div style="height: 1px; background: rgba(255, 255, 255, 0.15); flex-grow: 1; margin-left: 20px;"></div>
         </div>
         
-      <div id="running-containers" class="grid">
+        <div id="running-containers" class="grid">
             <div class="card" id="card-immich-group" 
                  style="display: {% if groups['Immich']['services']|length > 0 %} block {% else %} none {% endif %};">
                 <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', '{{ immich_url }}', 'immich-stack')">⋮</button>
@@ -294,7 +294,7 @@
             <div style="height: 1px; background: rgba(255, 255, 255, 0.1); flex-grow: 1; margin-left: 20px;"></div>
         </div>
 
-        <div id="stopped-containers" style="display: contents;">
+        <div id="stopped-containers" class="grid">
             {% for app in groups['Stopped'] %}
             <div class="card" id="card-{{ app.id }}" style="opacity: 0.6; filter: grayscale(0.8);">
                 <button class="menu-btn" onclick="openInfoMenu('{{ app.name }}', '{{ app.status }}', '{{ app.url }}', '{{ app.image }}', '{{ app.address }}', '{{ app.id }}')">⋮</button>
