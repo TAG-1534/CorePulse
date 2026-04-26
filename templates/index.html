@@ -257,8 +257,8 @@
         </div>
 
         <div id="running-containers" style="display: contents;">
-           <div class="card" id="card-immich-group" 
-             style="display: {% if groups['Immich']['services'] or groups['Running']|selectattr('name', 'contains', 'Immich')|list %} block {% else %} none {% endif %};">
+          <div class="card" id="card-immich-group" 
+             style="display: {% if groups['Immich']['services']|length > 0 %} block {% else %} none {% endif %};">
             
             <button class="menu-btn" onclick="openInfoMenu('Immich Stack', 'running', '{{ immich_url }}', 'ghcr.io/immich-app/immich-server', 'Local Stack', 'immich-stack')">⋮</button>
             <div class="title-area" style="margin-bottom: 15px;">
@@ -266,7 +266,7 @@
                 <h2>Immich Photos</h2>
             </div>
             <div id="immich-sub-services" style="display: grid; gap: 8px;">
-                {% for app in groups['Running'] if 'immich' in app.id or 'immich' in app.name.lower() %}
+                {% for app in groups['Immich']['services'] %}
                     <div id="sub-{{ app.id }}" class="sub-service" style="padding: 8px; font-size: 0.8rem;">
                         <span>{{ app.name }}</span><span class="status-running">● RUNNING</span>
                     </div>
